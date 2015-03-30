@@ -25,6 +25,14 @@ public enum CommandType {
         return this.commandName;
     }
 
+    /**
+     * This will return a regex pattern that will find the command headers that the server supports.
+     * @return A regex pattern to search for command headers with.
+     */
+    public static String getCommandTypePattern() {
+        return "CNNCT|ATTCK|DEFNS|REGEN|DESCR|LEAVE|QUERY|START|ACTON";
+    }
+
     public static CommandType fromString(String commandName) {
         if (commandName != null) {
             for (CommandType c : CommandType.values()) {

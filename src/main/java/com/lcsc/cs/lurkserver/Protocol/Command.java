@@ -7,55 +7,55 @@ import org.slf4j.LoggerFactory;
  * Created by Jake on 2/26/2015.
  */
 public class Command {
-    private static final Logger logger = LoggerFactory.getLogger(Command.class);
+    private static final Logger _logger = LoggerFactory.getLogger(Command.class);
 
-    private final   CommandType _type;
+    public  final   CommandType type;
     private         ActionType  _actionType = null;
     private         String      _body = null;
 
-    private         String      _extensionHeader;
+    private         ExtensionType      _extension;
 
-    public Command(String extensionHeader, String parameter) {
-        _type               = CommandType.EXTENSION;
-        _extensionHeader    = extensionHeader;
+    public Command(ExtensionType extension, String parameter) {
+        type = CommandType.EXTENSION;
+        _extension          = extension;
         _body               = parameter;
     }
 
     public Command(CommandType ctype, ActionType atype, String body) {
-        _type       = ctype;
+        type = ctype;
         _actionType = atype;
         _body       = body;
     }
 
     public Command(CommandType ctype, ActionType atype) {
-        _type       = ctype;
+        type = ctype;
         _actionType = atype;
     }
 
     public Command(CommandType type, String body) {
-        _type       = type;
+        this.type = type;
         _body       = body;
     }
 
     public Command(CommandType type) {
-        _type = type;
+        this.type = type;
     }
 
     public CommandType getCommandType() {
-        return _type;
+        return type;
     }
 
     private String buildMessage() {
         String message;
 
-        if (_type == CommandType.EXTENSION) {
-            message = _extensionHeader;
+        if (type == CommandType.EXTENSION) {
+            message = _extension.getExtensionHeader();
             if (_body != null) {
                 message += " " + _body;
             }
         }
         else {
-            message = _type.getCommandHeader();
+            message = type.getCommandHeader();
 
             if (_actionType != null) {
                 message += " " + _actionType.getActionName();
@@ -70,9 +70,10 @@ public class Command {
     }
 
     public byte[] toBytes() {
-        return this.buildMessage().getBytes();
+        return buildMessage().getBytes();
     }
+
     public String toString() {
-        return this.buildMessage();
+        return buildMessage();
     }
 }

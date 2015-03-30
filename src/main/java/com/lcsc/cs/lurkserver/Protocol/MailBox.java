@@ -31,7 +31,7 @@ public class MailBox extends Thread {
     public void run() {
         String incompleteMsg = "";
         while (!_done) {
-            char[] msg = new char[4096];
+            char[] msg = new char[1048576];
             try {
                _reader.read(msg);
             } catch (IOException e) {
@@ -41,8 +41,80 @@ public class MailBox extends Thread {
 
             String message = new String(msg).replaceAll("\0", "");
 
-            _logger.debug("New message: "+message);
+            //If we have an incomplete message laying around we need to use it!
+            if (incompleteMsg.length() > 0) {
+                message         = incompleteMsg + message;
+                incompleteMsg   = "";
+            }
+
+            List<Command> commands = new ArrayList<Command>();
+
+            String headerPattern = CommandType.getCommandTypePattern() + "|" + ExtensionType.getExtensionTypePattern();
+
+            //This just searched for the different Response headers that are possible.
+            Pattern pattern = Pattern.compile(headerPattern);
+            Matcher matcher = pattern.matcher(message);
+
+            //We need to match the first item to get an idea of where we're starting and which response type we're
+            // starting with.
+            if (matcher.find()) {
+                CommandType type   = CommandType.fromString(matcher.group());
+                int start           = matcher.end();
+                int end             = -1;
+                if (matcher.find()) {
+                    do {
+                        end             = matcher.start();
+
+                        Command newCmd = new Command(type, message.substring(start+1, end));
+                        commands.add(newCmd);
+
+                        type            = CommandType.fromString(matcher.group());
+                        start           = matcher.end();
+                    } while (matcher.find());
+                }
+                if (message.length() >= start+1 && (start+1) > 0){
+                    Command newCmd = new Command(type, message.substring(start + 1));
+                    commands.add(newCmd);
+                }
+            }
+            else if (message.length() == 0) {
+                commands.add(new Command(CommandType.LEAVE));
+            }
+            else {
+                _logger.error("Message doesn't have any valid headers for some reason: "+message);
+            }
+
+            if (commands.size() > 0)
+                _commandQueue.add(commands);
         }
+    }
+
+    private Command constructCommand(CommandType type, String body) {
+        Command cmd = null;
+        if (type == CommandType.LEAVE) {
+            cmd     = new Command(type);
+            _done   = true;
+        }
+        else if (type == CommandType.ACTION) {
+            //TODO Search for the ActionType in the body and handle accordingly!
+        }
+        else if (type == CommandType.CONNECT ||
+                type == CommandType.SET_ATTACK_STAT ||
+                type == CommandType.SET_DEFENSE_STAT ||
+                type == CommandType.SET_PLAYER_DESC ||
+                type == CommandType.SET_REGEN_STAT) {
+            cmd     = new Command(type, body);
+        }
+        else if (type == CommandType.QUERY ||
+                type == CommandType.START) {
+            cmd     = new Command(type);
+        }
+
+
+        if (cmd != null)
+            _logger.info("Received Command:\n"+cmd.toString());
+
+        return cmd;
     }
 
     public synchronized void stopReceiving() {

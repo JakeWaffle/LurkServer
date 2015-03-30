@@ -39,8 +39,6 @@ public class Response {
             this.type       = type;
 
         this.message = message.trim();
-
-        _logger.info("Received Message:\n"+toString());
     }
 
     public String getType() {
