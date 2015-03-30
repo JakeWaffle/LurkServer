@@ -4,11 +4,11 @@ import com.lcsc.cs.lurkserver.Settings;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.BufferedReader;
 import java.io.IOException;
-import java.io.InputStreamReader;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Created by Jake on 3/26/2015.
@@ -18,11 +18,16 @@ import java.net.Socket;
  * TODO Determine if multi-client messages are needed at all and how they should be handled if needed.
  * TODO Add an instance of the Game class here so it can given to the threads handling the client!
  */
-public class Server {
-    private static final Logger _logger      = LoggerFactory.getLogger(Server.class);
-    private ServerSocket _serverSocket;
+public class Server extends Thread {
+    private static final Logger             _logger      = LoggerFactory.getLogger(Server.class);
+    private              ServerSocket       _serverSocket;
+    private              boolean            _done;
+    private              List<Concierge>    _concierges;
 
-    public Server() {}
+    public Server() {
+        _done = false;
+        _concierges = new ArrayList<Concierge>();
+    }
 
     public void configureServer(Settings settings) {
         try {
@@ -32,27 +37,34 @@ public class Server {
         }
     }
 
-    public void start() {
-        try {
-            Socket sock = _serverSocket.accept();
-            System.out.println("Just connected to "
-                    + sock.getRemoteSocketAddress());
-            BufferedReader in = new BufferedReader(new InputStreamReader(sock.getInputStream()));
-            while (true) {
-                char[] buf = new char[1000];
-                in.read(buf);
-
-                String msg = new String(buf);
-                System.out.println(msg.trim());
+    @Override
+    public void run() {
+        while (!_done) {
+            try {
+                Socket sock = _serverSocket.accept();
+                Concierge concierge   = new Concierge(sock);
+                concierge.start();
+                _concierges.add(concierge);
+            } catch (IOException e) {
+                _logger.error("The server was shutdown or something happened with the clients", e);
             }
-        } catch(IOException e) {
-            _logger.error("Something happened when dealing with clients", e);
         }
     }
 
-    public void stop() {
+    public synchronized void stopServer() {
         try {
+            _done = true;
             _serverSocket.close();
+
+            for (Concierge concierge : _concierges) {
+                concierge.dropClient();
+                try {
+                    concierge.join();
+                    _logger.debug("Joined Concierge thread!");
+                } catch (InterruptedException e) {
+                    _logger.error("Interrupted when joining the Concierge's thread", e);
+                }
+            }
         } catch (IOException e) {
             _logger.error("Couldn't close server socket", e);
         }
