@@ -1,14 +1,12 @@
 package com.lcsc.cs.lurkserver.server;
 
 import com.lcsc.cs.lurkserver.Settings;
+import com.lcsc.cs.lurkserver.game.Client;
+import com.lcsc.cs.lurkserver.game.Game;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.IOException;
-import java.net.ServerSocket;
 import java.net.Socket;
-import java.util.ArrayList;
-import java.util.List;
 
 /**
  * Created by Jake on 3/26/2015.
@@ -17,56 +15,53 @@ import java.util.List;
  *
  * TODO Determine if multi-client messages are needed at all and how they should be handled if needed.
  * TODO Add an instance of the Game class here so it can given to the threads handling the client!
+ * TODO A client listener class may need to be created to accept new client connections.
+ *      The server may need to deal with other things such as events that happen to multiple players.
+ * TODO An instance of the Server needs to be given to each of the Concierge instances.
+ *      The clients will need to interact with other players. So the Concierge instances will need to
+ *      talk to each other. This might be able to be done through a Game class that maps player names
+ *      to the Concierge instances? It might also be able to be done through the Server.
  */
 public class Server extends Thread {
-    private static final Logger             _logger      = LoggerFactory.getLogger(Server.class);
-    private              ServerSocket       _serverSocket;
+    private static final Logger             _logger = LoggerFactory.getLogger(Server.class);
     private              boolean            _done;
-    private              List<Concierge>    _concierges;
+    private              Game               _game;
+    private              ClientListener     _listener;
 
     public Server() {
         _done = false;
-        _concierges = new ArrayList<Concierge>();
+        _game = new Game();
     }
 
     public void configureServer(Settings settings) {
-        try {
-            _serverSocket = new ServerSocket(settings.port);
-        } catch (IOException e) {
-            _logger.error("Couldn't start the server", e);
-        }
+        _listener = new ClientListener(this, settings.port);
+        _listener.start();
     }
 
     @Override
     public void run() {
-        while (!_done) {
-            try {
-                Socket sock = _serverSocket.accept();
-                Concierge concierge   = new Concierge(sock);
-                concierge.start();
-                _concierges.add(concierge);
-            } catch (IOException e) {
-                _logger.error("The server was shutdown or something happened with the clients", e);
-            }
+        _game.update();
+
+        try {
+            Thread.sleep(500);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
         }
+
+        //This is where time based or triggered events that affect possibly more than one user should be processed.
+        //This can be done using a Game class of some sort.
+
+    }
+
+    public synchronized void addClient(Socket socket) {
+        Client client = new Client(socket, _game);
+        client.start();
+        _game.clients.addClient(client);
     }
 
     public synchronized void stopServer() {
-        try {
-            _done = true;
-            _serverSocket.close();
-
-            for (Concierge concierge : _concierges) {
-                concierge.dropClient();
-                try {
-                    concierge.join();
-                    _logger.debug("Joined Concierge thread!");
-                } catch (InterruptedException e) {
-                    _logger.error("Interrupted when joining the Concierge's thread", e);
-                }
-            }
-        } catch (IOException e) {
-            _logger.error("Couldn't close server socket", e);
-        }
+        _done = true;
+        _listener.stopListener();
+        _game.stopGame();
     }
 }

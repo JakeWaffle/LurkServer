@@ -1,4 +1,4 @@
-package com.lcsc.cs.lurkserver.server;
+package com.lcsc.cs.lurkserver.game;
 
 /**
  * Created by Jake on 3/29/2015.

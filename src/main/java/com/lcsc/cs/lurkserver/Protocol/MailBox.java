@@ -65,7 +65,7 @@ public class MailBox extends Thread {
                     do {
                         end             = matcher.start();
 
-                        Command newCmd = new Command(type, message.substring(start+1, end));
+                        Command newCmd = constructCommand(type, message.substring(start+1, end));
                         commands.add(newCmd);
 
                         type            = CommandType.fromString(matcher.group());
@@ -73,12 +73,17 @@ public class MailBox extends Thread {
                     } while (matcher.find());
                 }
                 if (message.length() >= start+1 && (start+1) > 0){
-                    Command newCmd = new Command(type, message.substring(start + 1));
+                    Command newCmd = constructCommand(type, message.substring(start + 1));
+                    commands.add(newCmd);
+                }
+                //In this case only a header was sent from the user.
+                else {
+                    Command newCmd = constructCommand(type, "");
                     commands.add(newCmd);
                 }
             }
             else if (message.length() == 0) {
-                commands.add(new Command(CommandType.LEAVE));
+                commands.add(constructCommand(CommandType.LEAVE, ""));
             }
             else {
                 _logger.error("Message doesn't have any valid headers for some reason: "+message);
@@ -96,7 +101,7 @@ public class MailBox extends Thread {
             _done   = true;
         }
         else if (type == CommandType.ACTION) {
-            //TODO Search for the ActionType in the body and handle accordingly!
+            //TODO Search for the ActionType in the parameter and handle accordingly!
         }
         else if (type == CommandType.CONNECT ||
                 type == CommandType.SET_ATTACK_STAT ||

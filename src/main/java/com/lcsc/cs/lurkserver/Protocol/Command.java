@@ -10,39 +10,40 @@ public class Command {
     private static final Logger _logger = LoggerFactory.getLogger(Command.class);
 
     public  final   CommandType type;
-    private         ActionType  _actionType = null;
-    private         String      _body = null;
+    public  final   ActionType  actionType;
+    public  final   String parameter;
 
     private         ExtensionType      _extension;
 
     public Command(ExtensionType extension, String parameter) {
         type = CommandType.EXTENSION;
         _extension          = extension;
-        _body               = parameter;
+        this.parameter      = parameter;
+        actionType          = null;
     }
 
-    public Command(CommandType ctype, ActionType atype, String body) {
-        type = ctype;
-        _actionType = atype;
-        _body       = body;
+    public Command(CommandType ctype, ActionType atype, String parameter) {
+        type            = ctype;
+        actionType      = atype;
+        this.parameter  = parameter;
     }
 
     public Command(CommandType ctype, ActionType atype) {
-        type = ctype;
-        _actionType = atype;
+        type        = ctype;
+        actionType  = atype;
+        parameter   = null;
     }
 
-    public Command(CommandType type, String body) {
-        this.type = type;
-        _body       = body;
+    public Command(CommandType type, String parameter) {
+        this.type       = type;
+        this.parameter  = parameter;
+        actionType      = null;
     }
 
     public Command(CommandType type) {
-        this.type = type;
-    }
-
-    public CommandType getCommandType() {
-        return type;
+        this.type   = type;
+        parameter   = null;
+        actionType  = null;
     }
 
     private String buildMessage() {
@@ -50,19 +51,19 @@ public class Command {
 
         if (type == CommandType.EXTENSION) {
             message = _extension.getExtensionHeader();
-            if (_body != null) {
-                message += " " + _body;
+            if (parameter != null) {
+                message += " " + parameter;
             }
         }
         else {
             message = type.getCommandHeader();
 
-            if (_actionType != null) {
-                message += " " + _actionType.getActionName();
+            if (actionType != null) {
+                message += " " + actionType.getActionName();
             }
 
-            if (_body != null) {
-                message += " " + _body;
+            if (parameter != null) {
+                message += " " + parameter;
             }
         }
 

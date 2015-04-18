@@ -19,25 +19,10 @@ public class Response {
     public  final String            message;
 
     public Response(ResponseType type, String message) {
-        if (type == ResponseType.INFORM){
-            //The unneeded message length after the header needs to be replaced since this is
-            //an INFOM message.
-            message = message.replaceFirst("[0-9]+", "");
-
-            if (message.contains("GameDescription:"))
-                this.type = ResponseType.QUERY_INFORM;
-            else if (message.contains("Location:"))
-                this.type = ResponseType.PLAYER_INFORM;
-            else if (message.contains("Connection:") || message.contains("Monster:"))
-                this.type = ResponseType.ROOM_INFORM;
-            else if (message.contains("Name:"))
-                this.type = ResponseType.MONSTER_INFORM;
-            else
-                this.type = ResponseType.INVALID;
+        if (type == ResponseType.INFORM) {
+            //TODO Add in byte length for INFOM.
         }
-        else
-            this.type       = type;
-
+        this.type       = type;
         this.message = message.trim();
     }
 
@@ -49,8 +34,9 @@ public class Response {
         return message;
     }
 
-    private String buildMessage() {
-        String message = "adsfadsf";
+    public String buildMessage() {
+        String message = type.getType();
+        message += " "+this.message;
         return message;
     }
 
