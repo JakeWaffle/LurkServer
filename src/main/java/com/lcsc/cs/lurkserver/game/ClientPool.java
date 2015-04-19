@@ -17,6 +17,9 @@ import java.util.concurrent.ConcurrentMap;
  */
 public class ClientPool {
     private static final Logger _logger = LoggerFactory.getLogger(ClientPool.class);
+
+    private Game _game;
+
     //This maps a client's player name to the Client object.
     private ConcurrentMap<String, Client> _connectedClients;
 
@@ -27,7 +30,8 @@ public class ClientPool {
     //These are a list of the tasks that need to be done
     private ConcurrentLinkedQueue<Task>   _stagedTasks;
 
-    public ClientPool() {
+    public ClientPool(Game game) {
+        _game               = game;
         _connectedClients   = new ConcurrentHashMap<String, Client>();
         _unconnectedClients = new ConcurrentHashMap<String, Client>();
         _stagedTasks        = new ConcurrentLinkedQueue<Task>();
@@ -70,8 +74,19 @@ public class ClientPool {
             _connectedClients.put(playerName, client);
             client.id = playerName;
 
-            //TODO Check to see if its a new player or existing player (the player shouldn't be connected though!)
-            response = new Response(ResponseType.ACCEPTED, "New Player");
+            boolean notLoggedIn = _game.players.loadPlayer(playerName);
+
+            if (notLoggedIn) {
+                if (Player.playerExists(playerName)) {
+                    response = new Response(ResponseType.ACCEPTED, "Reprising Player");
+                }
+                else {
+                    response = new Response(ResponseType.ACCEPTED, "New Player");
+                }
+            }
+            else {
+                response = new Response(ResponseType.ACCEPTED, "Name Already Taken");
+            }
         }
         else {
             response = new Response(ResponseType.REJECTED, "Incorrect State");

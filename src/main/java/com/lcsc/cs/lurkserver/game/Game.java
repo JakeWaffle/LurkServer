@@ -13,9 +13,11 @@ import org.slf4j.LoggerFactory;
 public class Game {
     private static final Logger _logger = LoggerFactory.getLogger(Game.class);
     public final ClientPool clients;
+    public final PlayerPool players;
 
     public Game() {
         clients = new ClientPool();
+        players = new PlayerPool();
     }
 
     public synchronized void update() {
