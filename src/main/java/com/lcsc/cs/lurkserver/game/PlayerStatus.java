@@ -14,4 +14,15 @@ public enum PlayerStatus {
     public String getStatus() {
         return _status;
     }
+
+    public static PlayerStatus fromString(String status) {
+        if (status != null) {
+            for (PlayerStatus c : PlayerStatus.values()) {
+                if (status.equalsIgnoreCase(c.getStatus())) {
+                    return c;
+                }
+            }
+        }
+        return null;
+    }
 }

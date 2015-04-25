@@ -12,4 +12,5 @@ dependencies {
     compile 'org.slf4j:slf4j-api:1.7.10'
     compile 'ch.qos.logback:logback-classic:1.1.2'
     compile 'ch.qos.logback:logback-core:1.1.2'
+    compile 'org.eclipse.jetty:jetty-util-ajax:9.2.10.v20150310'
 }

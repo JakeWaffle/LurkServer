@@ -40,17 +40,18 @@ public class Server extends Thread {
 
     @Override
     public void run() {
-        _game.update();
+        while (!_done) {
+            _game.update();
 
-        try {
-            Thread.sleep(500);
-        } catch (InterruptedException e) {
-            e.printStackTrace();
+            try {
+                Thread.sleep(500);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+
+            //This is where time based or triggered events that affect possibly more than one user should be processed.
+            //This can be done using a Game class of some sort.
         }
-
-        //This is where time based or triggered events that affect possibly more than one user should be processed.
-        //This can be done using a Game class of some sort.
-
     }
 
     public synchronized void addClient(Socket socket) {

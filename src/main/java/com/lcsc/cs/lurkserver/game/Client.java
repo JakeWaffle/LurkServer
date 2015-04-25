@@ -38,8 +38,13 @@ public class Client extends Thread {
             public void notify(List<Command> commands) {
                 if (Client.this._clientState != ClientState.QUIT) {
                     for (Command command : commands) {
-                        if (command.type == CommandType.CONNECT) {
-                            if (_clientState == ClientState.NOT_CONNECTED) {
+                        if (command.type == CommandType.LEAVE) {
+                            _game.players.removePlayer(id);
+                            _game.clients.stageClientDisconnect(id);
+                            Client.this._clientState = ClientState.QUIT;
+                        }
+                        else if (_clientState == ClientState.NOT_CONNECTED) {
+                            if (command.type == CommandType.CONNECT) {
                                 ResponseMessageType response = _game.clients.connectClient(command.parameter, id);
 
                                 if (response == ResponseMessageType.NEW_PLAYER) {
@@ -57,10 +62,6 @@ public class Client extends Thread {
                                 _mailMan.sendMessage(ResponseMessageType.INCORRECT_STATE.getResponse());
                             }
                         }
-                        else if (command.type == CommandType.LEAVE) {
-                            _game.clients.stageClientDisconnect(id);
-                            Client.this._clientState = ClientState.QUIT;
-                        }
                         else if (command.type == CommandType.QUERY) {
                             if (_clientState != ClientState.NOT_CONNECTED) {
                                 Response response = _game.generateQueryResponse(Client.this.id);
@@ -75,6 +76,9 @@ public class Client extends Thread {
                         }
                         else if (_clientState == ClientState.STARTED) {
                             Client.this.handleStartedState(command);
+                        }
+                        else {
+                            _mailMan.sendMessage(ResponseMessageType.INCORRECT_STATE.getResponse());
                         }
                     }
                 }
@@ -153,6 +157,9 @@ public class Client extends Thread {
                 if (_player.description == null ||
                         (_player.attack == 0 && _player.defense == 0 && _player.regen == 0)) {
                     _mailMan.sendMessage(ResponseMessageType.NOT_READY.getResponse());
+                }
+                else {
+                    _player.saveData();
                 }
             }
             else {
