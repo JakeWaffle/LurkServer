@@ -87,30 +87,30 @@ public class ClientPool {
      * @param clientId This will be a player name or the random id depending on whether the Client was connected or not.
      */
     public synchronized void stageClientDisconnect(final String clientId) {
-        final Client client;
-        if (_connectedClients.containsKey(clientId)) {
-            client = _connectedClients.get(clientId);
-        }
-        else if (_unconnectedClients.containsKey(clientId)) {
-            client = _unconnectedClients.get(clientId);
-        }
-        else {
-            return;
-        }
-
         _stagedTasks.add(new Task() {
             @Override
             public void doTask() {
-                disconnectClient(client);
+                disconnectClient(clientId);
             }
         });
     }
 
     /**
      * This will remove the Client from the ClientPool and also make the Client's thread get joined and cleaned up.
-     * @param client This is the Client object that is to be disconnected!
+     * @param clientId This is the id of the client that will be disconnected.
      */
-    public synchronized void disconnectClient(Client client) {
+    public synchronized void disconnectClient(String clientId) {
+        final Client client;
+        if (_connectedClients.containsKey(clientId)) {
+            client = _connectedClients.remove(clientId);
+        }
+        else if (_unconnectedClients.containsKey(clientId)) {
+            client = _unconnectedClients.remove(clientId);
+        }
+        else {
+            return;
+        }
+
         client.dropClient();
         try {
             client.join();

@@ -45,6 +45,7 @@ public class Main {
                 }
                 server.stopServer();
                 try {
+                
                     server.join();
                     _logger.debug("Joined Server thread!");
                 } catch (InterruptedException e) {

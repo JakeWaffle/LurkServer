@@ -16,16 +16,28 @@ public class Game {
     private static final Logger _logger = LoggerFactory.getLogger(Game.class);
     public  final ClientPool    clients;
     public  final PlayerPool    players;
+    public  final Map           map;
 
-    private final String        _gameDescription;
+    private       String        _gameDescription;
 
     public Game() {
         players = new PlayerPool();
         clients = new ClientPool(players);
+        map     = new Map();
+    }
 
+    public synchronized void update() {
+        clients.update();
+    }
+
+    /**
+     * This should be used when the server first is started up. It will load up the game's information.
+     * The map is loaded, the game's description is loaded, the player's are loaded and whatever else.
+     */
+    public void loadGame(String gameDir) {
         //This will load the game description! Whew!
         String projRoot     = new File("").getAbsolutePath();
-        File gameDescrFile  = new File(projRoot, "data/game_description.txt");
+        File gameDescrFile  = new File(projRoot, "data/"+gameDir+"/game_description.txt");
 
         String gameDescription = "No one knows anything about this game... because the file does not exist!";
         if (gameDescrFile.exists()) {
@@ -41,18 +53,8 @@ public class Game {
             }
         }
         _gameDescription = "GameDescription: "+gameDescription;
-    }
-
-    public synchronized void update() {
-        clients.update();
-    }
-
-    /**
-     * This should be used when the server first is started up. It will load up the game's information.
-     * The map is loaded, the game's description is loaded, the player's are loaded and whatever else.
-     */
-    public void loadGame() {
-
+        
+        map.loadMap(gameDir);
     }
 
     /**

@@ -23,6 +23,6 @@ public enum ExtensionType {
      * @return A regex pattern to search for extension headers with.
      */
     public static String getExtensionTypePattern() {
-        return "PCUP|USEE";
+        return "PCKUP|USEEE";
     }
 }

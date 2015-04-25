@@ -42,6 +42,11 @@ public class PlayerPool {
         return _players.get(playerName);
     }
 
+    public void removePlayer(String playerName) {
+        getPlayer(playerName).saveData();
+        _players.remove(playerName);
+    }
+
     /**
      * This is for the QUERY command. We need a list of the active players for the response.
      * @return A list of the active players!

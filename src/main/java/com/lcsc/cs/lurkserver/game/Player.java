@@ -1,12 +1,19 @@
 package com.lcsc.cs.lurkserver.game;
 
-import java.io.File;
+import org.eclipse.jetty.util.ajax.JSON;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.io.*;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * Created by Jake on 4/19/2015.
  * This holds a logged in player's data.
  */
 public class Player {
+    private static final Logger _logger = LoggerFactory.getLogger(Player.class);
     public  final   int         MAX_STAT_POINTS = 100;
     private final   File        _playerFile;
     public  final   String      name;
@@ -30,7 +37,7 @@ public class Player {
         name            = playerName;
         _playerFile     = new File(playerDataDir, playerName+".pldat");
 
-        if (playerExists(playerDataDir, playerName+".pldat")) {
+        if (_playerFile.exists()) {
             loadDataFromFile();
         }
         else {
@@ -43,7 +50,7 @@ public class Player {
      * @return A boolean specifying if the player's data file exists already.
      */
     public static boolean playerExists(String playerName, String playerDataDir) {
-        return  new File(playerDataDir, playerName+".pldat").exists();
+        return new File(playerDataDir, playerName+".pldat").exists();
     }
 
     /**
@@ -65,8 +72,30 @@ public class Player {
      * This will load the player's data from a file.
      */
     private void loadDataFromFile() {
-        //TODO Load player data from file!
-        loadDefaultData();
+        FileReader reader = null;
+
+        try {
+            reader = new FileReader(_playerFile);
+            Map<String, Object> data = (Map<String, Object>)JSON.parse(reader);
+
+            description = (String)data.get("description");
+            gold        = ((Long)data.get("gold")).intValue();
+            attack      = ((Long)data.get("attack")).intValue();
+            defense     = ((Long)data.get("defense")).intValue();
+            regen       = ((Long)data.get("regen")).intValue();
+            status      = PlayerStatus.fromString((String)data.get("status"));
+            location    = (String)data.get("location");
+            health      = ((Long)data.get("health")).intValue();;
+            started     = ((Boolean)data.get("started")).booleanValue();
+        } catch (FileNotFoundException e) {
+            _logger.error("Problem loading the player data file", e);
+        } catch (IOException e) {
+            _logger.error("Problem loading the player data file", e);
+        } finally {
+            try {
+                reader.close();
+            } catch (IOException e) {}
+        }
     }
 
     /**
@@ -74,7 +103,32 @@ public class Player {
      * the game.
      */
     public void saveData() {
-        //TODO Save player's data to corresponding file.
+        Map<String, Object> data = new HashMap<String, Object>();
+
+        data.put("description", description);
+        data.put("gold", gold);
+        data.put("attack", attack);
+        data.put("defense", defense);
+        data.put("regen", regen);
+        data.put("status", status.getStatus());
+        data.put("location", location);
+        data.put("health", health);
+        data.put("started", started);
+
+        String jsonData = JSON.toString(data);
+        FileOutputStream out = null;
+        try {
+            out = new FileOutputStream(_playerFile);
+            out.write(jsonData.getBytes());
+        } catch (FileNotFoundException e) {
+            _logger.error("Player data file failed to save", e);
+        } catch (IOException e) {
+            _logger.error("Player data file failed to save", e);
+        } finally {
+            try {
+                out.close();
+            } catch (IOException e) {}
+        }
     }
 
     public String getStats() {

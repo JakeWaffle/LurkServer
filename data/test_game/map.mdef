@@ -1,0 +1,9 @@
+{
+    "starting_room":"Tavern",
+    "rooms": {
+        "Tavern": {
+            "connections": [],
+            "monsters": []
+        }
+    }
+}
