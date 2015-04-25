@@ -3,7 +3,7 @@ package com.lcsc.cs.lurkserver.Protocol;
 /**
  * Created by Jake on 3/3/2015.
  */
-public enum ResponseType {
+public enum ResponseHeader {
     ACCEPTED("ACEPT"),
     REJECTED("REJEC"),
     RESULT("RESLT"),
@@ -18,7 +18,7 @@ public enum ResponseType {
 
     private final String type;
 
-    private ResponseType(String type) {
+    private ResponseHeader(String type) {
         this.type = type;
     }
 
@@ -34,9 +34,9 @@ public enum ResponseType {
         return "ACEPT|REJEC|RESLT|INFOM|MESSG|NOTIF";
     }
 
-    public static ResponseType fromString(String type) {
+    public static ResponseHeader fromString(String type) {
         if (type != null) {
-            for (ResponseType r : ResponseType.values()) {
+            for (ResponseHeader r : ResponseHeader.values()) {
                 if (type.equalsIgnoreCase(r.getType())) {
                     return r;
                 }

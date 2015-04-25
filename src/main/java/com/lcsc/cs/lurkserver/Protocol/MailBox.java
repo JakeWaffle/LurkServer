@@ -65,14 +65,21 @@ public class MailBox extends Thread {
                     do {
                         end             = matcher.start();
 
-                        Command newCmd = constructCommand(type, message.substring(start+1, end));
-                        commands.add(newCmd);
+                        if (message.length() > start+1 && (start+1) >= 0 &&
+                                message.length() > end && (end) >= 0) {
+                            Command newCmd = constructCommand(type, message.substring(start + 1, end));
+                            commands.add(newCmd);
+                        }
+                        else {
+                            Command newCmd = constructCommand(type, "");
+                            commands.add(newCmd);
+                        }
 
                         type            = CommandType.fromString(matcher.group());
                         start           = matcher.end();
                     } while (matcher.find());
                 }
-                if (message.length() >= start+1 && (start+1) > 0){
+                if (message.length() > start+1 && (start+1) >= 0){
                     Command newCmd = constructCommand(type, message.substring(start + 1));
                     commands.add(newCmd);
                 }
@@ -118,6 +125,8 @@ public class MailBox extends Thread {
 
         if (cmd != null)
             _logger.info("Received Command:\n"+cmd.toString());
+        else
+            _logger.error("Received Command is null: Type: "+type.getCommandHeader()+" Body: "+body);
 
         return cmd;
     }

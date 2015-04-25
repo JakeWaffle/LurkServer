@@ -3,11 +3,6 @@ package com.lcsc.cs.lurkserver.Protocol;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-
 /**
  * Created by Jake on 3/3/2015.
  * This response will be what is sent back to the client. This structure just makes the response easier to
@@ -15,15 +10,16 @@ import java.util.regex.Pattern;
  */
 public class Response {
     private static final Logger     _logger = LoggerFactory.getLogger(Response.class);
-    public  final ResponseType      type;
+    public  final ResponseHeader type;
     public  final String            message;
 
-    public Response(ResponseType type, String message) {
-        if (type == ResponseType.INFORM) {
-            //TODO Add in byte length for INFOM.
+    public Response(ResponseHeader type, String message) {
+        message         = message.trim();
+        if (type == ResponseHeader.INFORM) {
+            message     = Integer.toString(message.length())+message;
         }
         this.type       = type;
-        this.message = message.trim();
+        this.message    = message;
     }
 
     public String getType() {

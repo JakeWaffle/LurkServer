@@ -94,7 +94,7 @@ public class MailMan extends Thread {
     //This will send a message to the server
     public synchronized void sendMessage(Response response) {
         try {
-            _logger.info("Sending Message to Client:\n" + response.toString() + "\n" + response.buildMessage());
+            _logger.info("Sending Message to Client:\n" + response.buildMessage());
             _out.write(response.toBytes());
             Thread.sleep(100);
         } catch(IOException e) {

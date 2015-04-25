@@ -1,9 +1,11 @@
 package com.lcsc.cs.lurkserver.game;
 
 import com.lcsc.cs.lurkserver.Protocol.Response;
-import com.lcsc.cs.lurkserver.Protocol.ResponseType;
+import com.lcsc.cs.lurkserver.Protocol.ResponseHeader;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.io.*;
 
 /**
  * Created by Jake on 3/30/2015.
@@ -12,12 +14,33 @@ import org.slf4j.LoggerFactory;
  */
 public class Game {
     private static final Logger _logger = LoggerFactory.getLogger(Game.class);
-    public final ClientPool clients;
-    public final PlayerPool players;
+    public  final ClientPool    clients;
+    public  final PlayerPool    players;
+
+    private final String        _gameDescription;
 
     public Game() {
-        clients = new ClientPool();
         players = new PlayerPool();
+        clients = new ClientPool(players);
+
+        //This will load the game description! Whew!
+        String projRoot     = new File("").getAbsolutePath();
+        File gameDescrFile  = new File(projRoot, "data/game_description.txt");
+
+        String gameDescription = "No one knows anything about this game... because the file does not exist!";
+        if (gameDescrFile.exists()) {
+            try {
+                RandomAccessFile file = new RandomAccessFile(gameDescrFile, "r");
+                byte[] description = new byte[(int)file.length()];
+                file.read(description);
+                gameDescription = new String(description).trim();
+            } catch (FileNotFoundException e) {
+                _logger.error("The game description file doesn't exist: " + gameDescrFile.getAbsolutePath(), e);
+            } catch (IOException e) {
+                _logger.error("Problem reading the game description file", e);
+            }
+        }
+        _gameDescription = "GameDescription: "+gameDescription;
     }
 
     public synchronized void update() {
@@ -38,8 +61,17 @@ public class Game {
      * @return The response to the QUERY command for a specific player.
      */
     public Response generateQueryResponse(String playerName) {
-        //TODO Finish the query response (make sure INFOM's work also)
-        return new Response(ResponseType.INFORM, "Imma response");
+        /*return new Response(ResponseType.INFORM,
+                String.format("%s\n\n%s%s%s",
+                _gameDescription,
+                //TODO Extension stats string construction.
+                players.getPlayer(playerName).getStats(),
+                players.getPlayerList()));*/
+        return new Response(ResponseHeader.INFORM,
+                String.format("%s\n\n%s\n\n%s",
+                        _gameDescription,
+                        players.getPlayer(playerName).getStats(),
+                        players.getPlayerList()));
     }
 
 
