@@ -62,7 +62,7 @@ public class Game {
      * @param playerName The name of the player.
      * @return The response to the QUERY command for a specific player.
      */
-    public Response generateQueryResponse(String playerName) {
+    public synchronized Response generateQueryResponse(String playerName) {
         /*return new Response(ResponseType.INFORM,
                 String.format("%s\n\n%s%s%s",
                 _gameDescription,
@@ -74,6 +74,30 @@ public class Game {
                         _gameDescription,
                         players.getPlayer(playerName).getStats(),
                         players.getPlayerList()));
+    }
+
+    /**
+     * This will move a player from one room to another. This assumes that the room change is possible!
+     * @param player This is the player that is changing rooms.
+     * @param newRoom This is the name of the room that's being switched to.
+     * @return The response that will be sent back to the client. It will either be
+     *         "REJEC No Connection", "RESLT Collected (int) Gold" or "RESLT Enter No Gold".
+     */
+    public synchronized Response changeRoom(Player player, String newRoom) {
+        Response response;
+        if (map.areRoomsConnected(player.currentRoom(), newRoom)) {
+            int goldReceived = map.changeRoom(player, newRoom);
+            player.changeRoom(newRoom);
+
+            if (goldReceived == 0)
+                response = ResponseMessage.NO_GOLD.getResponse();
+            else
+                response = new Response(ResponseHeader.RESULT, String.format("Collected %d Gold", goldReceived));
+        }
+        else
+            response = ResponseMessage.NO_CONNECTION.getResponse();
+
+        return response;
     }
 
 

@@ -18,7 +18,7 @@ public class Player {
     private final   int             MAX_STAT_POINTS = 100;
     private final   int             MAX_HEALTH      = 100;
     private final   File            _playerFile;
-    private         String          _name;
+    public          String          name;
     private         String          _description;
     private         int             _gold;
     private         int             _attack;
@@ -37,7 +37,7 @@ public class Player {
      * @param startingRoom This is the room that the player starts out in.
      */
     public Player(String playerName, String playerDataDir, String startingRoom) {
-        _name            = playerName;
+        name            = playerName;
         _playerFile     = new File(playerDataDir, playerName+".pldat");
 
         if (_playerFile.exists()) {
@@ -154,13 +154,29 @@ public class Player {
     }
 
     /**
-     * This is for setting the stats of the player before the player has restarted yet.
-     * @param commandType
-     * @param stat
-     * @return
+     * This returns the location of the player.
+     * @return A string name of the player's current room.
      */
-    public ResponseMessageType setStat(CommandType commandType, String stat) {
-        ResponseMessageType response = ResponseMessageType.FINE;
+    public synchronized String currentRoom() {
+        return _location;
+    }
+
+    /**
+     * Changes the location of the player.
+     * @param newRoom This is the new location of the player.
+     */
+    public void changeRoom(String newRoom) {
+        _location = newRoom;
+    }
+
+    /**
+     * This is for setting the stats of the player before the player has restarted yet.
+     * @param commandType This specifies the stat that is being changed.
+     * @param stat This is the actual stat that some stat is being changed to.
+     * @return A response that will be sent to the client.
+     */
+    public ResponseMessage setStat(CommandType commandType, String stat) {
+        ResponseMessage response = ResponseMessage.FINE;
         if (commandType == CommandType.SET_PLAYER_DESC) {
             _description = stat;
 
@@ -172,9 +188,9 @@ public class Player {
                 if (atkStat >= 0 && atkStat <= remainingStatPoints)
                     _attack = atkStat;
                 else
-                    response = ResponseMessageType.STATS_TOO_HIGH;
+                    response = ResponseMessage.STATS_TOO_HIGH;
             } catch(Exception e) {
-                response = ResponseMessageType.INCORRECT_STATE;
+                response = ResponseMessage.INCORRECT_STATE;
             }
         }
         else if (commandType == CommandType.SET_DEFENSE_STAT) {
@@ -184,9 +200,9 @@ public class Player {
                 if (defStat >= 0 && defStat <= remainingStatPoints)
                     _defense = defStat;
                 else
-                    response = ResponseMessageType.STATS_TOO_HIGH;
+                    response = ResponseMessage.STATS_TOO_HIGH;
             } catch(Exception e) {
-                response = ResponseMessageType.INCORRECT_STATE;
+                response = ResponseMessage.INCORRECT_STATE;
             }
         }
         else if (commandType == CommandType.SET_REGEN_STAT) {
@@ -196,9 +212,9 @@ public class Player {
                 if (regStat >= 0 && regStat <= remainingStatPoints)
                     _regen = regStat;
                 else
-                    response = ResponseMessageType.STATS_TOO_HIGH;
+                    response = ResponseMessage.STATS_TOO_HIGH;
             } catch(Exception e) {
-                response = ResponseMessageType.INCORRECT_STATE;
+                response = ResponseMessage.INCORRECT_STATE;
             }
         }
 
@@ -206,7 +222,7 @@ public class Player {
     }
 
     public String getStats() {
-        return  String.format("Name: %s\n",_name)+
+        return  String.format("Name: %s\n",name)+
                 String.format("Description: %s\n", _description)+
                 String.format("Gold: %d\n", _gold)+
                 String.format("Attack: %d\n", _attack)+

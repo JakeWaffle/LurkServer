@@ -56,11 +56,11 @@ public class ClientPool {
      *                      of the Client that is already within _unconnectedClients.
      * @return The response that is to be sent back to the player will be returned here.
      */
-    public synchronized ResponseMessageType connectClient(final String playerName, final String unconnectedId) {
-        ResponseMessageType response = null;
+    public synchronized ResponseMessage connectClient(final String playerName, final String unconnectedId) {
+        ResponseMessage response = null;
 
         if (_connectedClients.containsKey(playerName)) {
-            response = ResponseMessageType.NAME_TAKEN;
+            response = ResponseMessage.NAME_TAKEN;
         }
         //else if (player has existed, but isn't connected and is dead) {
         //  response = new Response(ResponseType.REJECTED, "Dead Without Health");
@@ -73,7 +73,7 @@ public class ClientPool {
             response = _players.loadPlayer(playerName);
         }
         else {
-            response = ResponseMessageType.INCORRECT_STATE;
+            response = ResponseMessage.INCORRECT_STATE;
             _logger.error("The client should only be calling ClientPool.connectClient() when the client" +
                     "isn't connected yet!!!!");
         }

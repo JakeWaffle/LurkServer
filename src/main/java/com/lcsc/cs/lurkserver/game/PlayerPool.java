@@ -38,11 +38,11 @@ public class PlayerPool {
      * @param playerName The player name that the Player object belongs to. It should be unique.
      * @return If the player exists a Player object will be returned, otherwise a null will be returned.
      */
-    public Player getPlayer(String playerName) {
+    public synchronized Player getPlayer(String playerName) {
         return _players.get(playerName);
     }
 
-    public void removePlayer(String playerName) {
+    public synchronized void removePlayer(String playerName) {
         getPlayer(playerName).saveData();
         _players.remove(playerName);
     }
@@ -51,7 +51,7 @@ public class PlayerPool {
      * This is for the QUERY command. We need a list of the active players for the response.
      * @return A list of the active players!
      */
-    public String getPlayerList() {
+    public synchronized String getPlayerList() {
         String playerList = "";
         for (String playerName : _players.keySet()) {
             playerList += "Player: "+playerName;
@@ -63,9 +63,11 @@ public class PlayerPool {
      * This checks the PlayerPool _players map to see if the player is logged in currently.
      * @return false if player isn't logged in, true if the player is logged in.
      */
-    public boolean playerLoggedIn(String playerName) {
+    public synchronized boolean playerLoggedIn(String playerName) {
         return _players.containsKey(playerName);
     }
+
+
 
     /**
      * This is called when a client logs in as a player. This playerName might have been used before. If it has
@@ -74,26 +76,28 @@ public class PlayerPool {
      * @param playerName A unique player name that may or may not already exist.
      * @return A response that will be sent back to the client. It has to follow the LurkProtocol.
      */
-    public ResponseMessageType loadPlayer(String playerName) {
-        ResponseMessageType response = null;
+    public synchronized ResponseMessage loadPlayer(String playerName) {
+        ResponseMessage response = null;
 
         if (!playerLoggedIn(playerName)) {
             if (Player.playerExists(playerName, _playerDataDirectory)) {
-                response = ResponseMessageType.REPRISING_PLAYER;
+                response = ResponseMessage.REPRISING_PLAYER;
             }
             else {
-                response = ResponseMessageType.NEW_PLAYER;
+                response = ResponseMessage.NEW_PLAYER;
             }
 
             Player newPlayer    = new Player(playerName, _playerDataDirectory, _map.getStartingRoom());
 
             if (newPlayer.isDead())
-                response = ResponseMessageType.DEAD_PLAYER;
-            else
+                response = ResponseMessage.DEAD_PLAYER;
+            else {
                 _players.put(playerName, newPlayer);
+                _map.spawnPlayer(newPlayer);
+            }
         }
         else {
-            response = ResponseMessageType.NAME_TAKEN;
+            response = ResponseMessage.NAME_TAKEN;
             _logger.warn("The ClientPool shouldn't be trying to load players that are currently in the game!");
         }
 
@@ -103,7 +107,7 @@ public class PlayerPool {
     /**
      * This should be called periodically and will inform the Player objects to save their data to their files.
      */
-    public void savePlayers() {
+    public synchronized void savePlayers() {
         for (Player player : _players.values()) {
             player.saveData();
         }

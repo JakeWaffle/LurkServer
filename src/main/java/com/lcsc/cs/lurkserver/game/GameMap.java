@@ -9,7 +9,7 @@ import java.util.Map;
 
 public class GameMap {
     private static final Logger _logger = LoggerFactory.getLogger(Map.class);
-    
+
     private Map<String, Room> _rooms;
     private String            _startingRoom;
     
@@ -19,8 +19,46 @@ public class GameMap {
         _startingRoom  = "Purgatory";
     }
 
-    public String getStartingRoom() {
+    public synchronized String getStartingRoom() {
         return _startingRoom;
+    }
+
+    /**
+     * This will put a new player into the starting room.
+     * @param newPlayer This is a player that has just started the game.
+     */
+    public synchronized void spawnPlayer(Player newPlayer) {
+        _rooms.get(_startingRoom).addPlayer(newPlayer);
+    }
+
+    /**
+     * This will move a player from one room to another
+     * @param player This is the player who is leaving one room to go to another.
+     * @param newRoom This is the room that the player is going to.
+     * @return This is the amount of gold that the player has collected.
+     */
+    public synchronized int changeRoom(Player player, String newRoom) {
+        _rooms.get(player.currentRoom()).removePlayer(player.name);
+        return _rooms.get(newRoom).addPlayer(player);
+    }
+
+    /**
+     * Checks to see if the given rooms are connected.
+     * @param roomA A room's name
+     * @param roomB Another room's name
+     * @return A boolean informing if the rooms are connected or not.
+     */
+    public synchronized boolean areRoomsConnected(String roomA, String roomB) {
+        Room room = _rooms.get(roomA);
+        return room.isConnected(roomB);
+    }
+
+    /**
+     * This triggers monsters and players in a room to fight!
+     * @param room All players and monsters will fight in the current room.
+     */
+    public synchronized void fightMonsters(String room) {
+        //TODO Finish the fighting of monsters and players in a room.
     }
 
     /**

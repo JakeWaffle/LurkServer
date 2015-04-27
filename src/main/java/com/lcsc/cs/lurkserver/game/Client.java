@@ -45,13 +45,13 @@ public class Client extends Thread {
                         }
                         else if (_clientState == ClientState.NOT_CONNECTED) {
                             if (command.type == CommandType.CONNECT) {
-                                ResponseMessageType response = _game.clients.connectClient(command.parameter, id);
+                                ResponseMessage response = _game.clients.connectClient(command.parameter, id);
 
-                                if (response == ResponseMessageType.NEW_PLAYER) {
+                                if (response == ResponseMessage.NEW_PLAYER) {
                                     _clientState = ClientState.NOT_STARTED;
                                     _player = _game.players.getPlayer(id);
                                 }
-                                else if (response == ResponseMessageType.REPRISING_PLAYER) {
+                                else if (response == ResponseMessage.REPRISING_PLAYER) {
                                     _clientState = ClientState.STARTED;
                                     _player = _game.players.getPlayer(id);
                                 }
@@ -59,7 +59,7 @@ public class Client extends Thread {
                                 _mailMan.sendMessage(response.getResponse());
                             }
                             else {
-                                _mailMan.sendMessage(ResponseMessageType.INCORRECT_STATE.getResponse());
+                                _mailMan.sendMessage(ResponseMessage.INCORRECT_STATE.getResponse());
                             }
                         }
                         else if (command.type == CommandType.QUERY) {
@@ -68,7 +68,7 @@ public class Client extends Thread {
                                 _mailMan.sendMessage(response);
                             }
                             else {
-                                _mailMan.sendMessage(ResponseMessageType.INCORRECT_STATE.getResponse());
+                                _mailMan.sendMessage(ResponseMessage.INCORRECT_STATE.getResponse());
                             }
                         }
                         else if (_clientState == ClientState.NOT_STARTED) {
@@ -78,7 +78,7 @@ public class Client extends Thread {
                             Client.this.handleStartedState(command);
                         }
                         else {
-                            _mailMan.sendMessage(ResponseMessageType.INCORRECT_STATE.getResponse());
+                            _mailMan.sendMessage(ResponseMessage.INCORRECT_STATE.getResponse());
                         }
                     }
                 }
@@ -110,24 +110,39 @@ public class Client extends Thread {
                 command.type == CommandType.SET_ATTACK_STAT ||
                 command.type == CommandType.SET_DEFENSE_STAT ||
                 command.type == CommandType.SET_REGEN_STAT) {
-            ResponseMessageType responseMsgType = _player.setStat(command.type, command.parameter);
+            ResponseMessage responseMsgType = _player.setStat(command.type, command.parameter);
             _mailMan.sendMessage(responseMsgType.getResponse());
         }
         else if (command.type == CommandType.START) {
             if (_player.isReady()) {
-                _mailMan.sendMessage(ResponseMessageType.NOT_READY.getResponse());
+                _mailMan.sendMessage(ResponseMessage.NOT_READY.getResponse());
             }
             else {
                 _player.saveData();
             }
         }
-        else {
-            _mailMan.sendMessage(ResponseMessageType.INCORRECT_STATE.getResponse());
-        }
+        else
+            _mailMan.sendMessage(ResponseMessage.INCORRECT_STATE.getResponse());
     }
 
     public synchronized void handleStartedState(Command command) {
-
+        if (command.type == CommandType.ACTION) {
+            if (command.actionType == ActionType.CHANGE_ROOM) {
+                _mailMan.sendMessage(_game.changeRoom(_player, command.parameter));
+            }
+            else if (command.actionType == ActionType.FIGHT) {
+                _game.map.fightMonsters(_player.currentRoom());
+            }
+            else if (command.actionType == ActionType.MESSAGE) {
+            }
+            else
+                _mailMan.sendMessage(ResponseMessage.INCORRECT_STATE.getResponse());
+        }
+        else if (command.type == CommandType.START) {
+            //TODO Return information in the current room!
+        }
+        else
+            _mailMan.sendMessage(ResponseMessage.INCORRECT_STATE.getResponse());
     }
 
     public synchronized void dropClient() {
