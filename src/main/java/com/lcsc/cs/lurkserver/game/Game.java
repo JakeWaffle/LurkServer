@@ -16,14 +16,14 @@ public class Game {
     private static final Logger _logger = LoggerFactory.getLogger(Game.class);
     public  final ClientPool    clients;
     public  final PlayerPool    players;
-    public  final Map           map;
+    public  final GameMap       map;
 
     private       String        _gameDescription;
 
     public Game() {
-        players = new PlayerPool();
+        map     = new GameMap();
+        players = new PlayerPool(map);
         clients = new ClientPool(players);
-        map     = new Map();
     }
 
     public synchronized void update() {

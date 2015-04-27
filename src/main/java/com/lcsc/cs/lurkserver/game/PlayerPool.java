@@ -4,9 +4,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.File;
-import java.util.HashMap;
 import java.util.Map;
-import java.util.Set;
 import java.util.TreeMap;
 
 /**
@@ -16,14 +14,16 @@ import java.util.TreeMap;
  * logs in, its data will be loaded from its player file and its information will be used again.
  */
 public class PlayerPool {
-    private static final Logger _logger = LoggerFactory.getLogger(PlayerPool.class);
+    private static final Logger                 _logger = LoggerFactory.getLogger(PlayerPool.class);
+    private              GameMap                _map;
     //These are the players that are logged in.
-    private         Map<String, Player> _players;
+    private              Map<String, Player>    _players;
 
     //This is an absolute path!
     private final   String _playerDataDirectory;
 
-    public PlayerPool() {
+    public PlayerPool(GameMap map) {
+        _map                    = map;
         _players                = new TreeMap<String, Player>();
 
         String projRoot         = new File("").getAbsolutePath();
@@ -85,8 +85,12 @@ public class PlayerPool {
                 response = ResponseMessageType.NEW_PLAYER;
             }
 
-            Player newPlayer    = new Player(playerName, _playerDataDirectory);
-            _players.put(playerName, newPlayer);
+            Player newPlayer    = new Player(playerName, _playerDataDirectory, _map.getStartingRoom());
+
+            if (newPlayer.isDead())
+                response = ResponseMessageType.DEAD_PLAYER;
+            else
+                _players.put(playerName, newPlayer);
         }
         else {
             response = ResponseMessageType.NAME_TAKEN;

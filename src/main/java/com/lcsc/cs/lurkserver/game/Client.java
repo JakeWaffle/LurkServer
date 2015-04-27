@@ -106,65 +106,23 @@ public class Client extends Thread {
      * @param command This is the command that the client has sent.
      */
     public synchronized void handleNotStartedState(Command command) {
-        if (command.type == CommandType.SET_PLAYER_DESC) {
-            _player.description = command.parameter;
-            _mailMan.sendMessage(ResponseMessageType.FINE.getResponse());
+        if (command.type == CommandType.SET_PLAYER_DESC ||
+                command.type == CommandType.SET_ATTACK_STAT ||
+                command.type == CommandType.SET_DEFENSE_STAT ||
+                command.type == CommandType.SET_REGEN_STAT) {
+            ResponseMessageType responseMsgType = _player.setStat(command.type, command.parameter);
+            _mailMan.sendMessage(responseMsgType.getResponse());
         }
-        else {
-            if (command.type == CommandType.SET_ATTACK_STAT) {
-                ResponseMessageType msg = ResponseMessageType.FINE;
-                try {
-                    int remainingStatPoints = _player.MAX_STAT_POINTS - _player.defense - _player.regen;
-                    int stat = Integer.parseInt(command.parameter);
-                    if (stat >= 0 && stat <= remainingStatPoints)
-                        _player.attack = stat;
-                    else
-                        msg = ResponseMessageType.STATS_TOO_HIGH;
-                } catch(Exception e) {
-                    msg = ResponseMessageType.INCORRECT_STATE;
-                }
-                _mailMan.sendMessage(msg.getResponse());
-            }
-            else if (command.type == CommandType.SET_DEFENSE_STAT) {
-                ResponseMessageType msg = ResponseMessageType.FINE;
-                try {
-                    int remainingStatPoints = _player.MAX_STAT_POINTS - _player.attack - _player.regen;
-                    int stat = Integer.parseInt(command.parameter);
-                    if (stat >= 0 && stat <= remainingStatPoints)
-                        _player.defense = stat;
-                    else
-                        msg = ResponseMessageType.STATS_TOO_HIGH;
-                } catch(Exception e) {
-                    msg = ResponseMessageType.INCORRECT_STATE;
-                }
-                _mailMan.sendMessage(msg.getResponse());
-            }
-            else if (command.type == CommandType.SET_REGEN_STAT) {
-                ResponseMessageType msg = ResponseMessageType.FINE;
-                try {
-                    int remainingStatPoints = _player.MAX_STAT_POINTS - _player.attack - _player.defense;
-                    int stat = Integer.parseInt(command.parameter);
-                    if (stat >= 0 && stat <= remainingStatPoints)
-                        _player.regen = stat;
-                    else
-                        msg = ResponseMessageType.STATS_TOO_HIGH;
-                } catch(Exception e) {
-                    msg = ResponseMessageType.INCORRECT_STATE;
-                }
-                _mailMan.sendMessage(msg.getResponse());
-            }
-            else if (command.type == CommandType.START) {
-                if (_player.description == null ||
-                        (_player.attack == 0 && _player.defense == 0 && _player.regen == 0)) {
-                    _mailMan.sendMessage(ResponseMessageType.NOT_READY.getResponse());
-                }
-                else {
-                    _player.saveData();
-                }
+        else if (command.type == CommandType.START) {
+            if (_player.isReady()) {
+                _mailMan.sendMessage(ResponseMessageType.NOT_READY.getResponse());
             }
             else {
-                _mailMan.sendMessage(ResponseMessageType.INCORRECT_STATE.getResponse());
+                _player.saveData();
             }
+        }
+        else {
+            _mailMan.sendMessage(ResponseMessageType.INCORRECT_STATE.getResponse());
         }
     }
 

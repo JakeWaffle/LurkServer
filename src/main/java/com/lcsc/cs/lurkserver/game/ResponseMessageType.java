@@ -10,6 +10,7 @@ public enum ResponseMessageType {
     REPRISING_PLAYER(ResponseHeader.ACCEPTED, "Reprising Player"),
     NEW_PLAYER(ResponseHeader.ACCEPTED, "New Player"),
     NAME_TAKEN(ResponseHeader.REJECTED, "Name Already Taken"),
+    DEAD_PLAYER(ResponseHeader.REJECTED, "Dead Without Health"),
     INCORRECT_STATE(ResponseHeader.REJECTED, "Incorrect State"),
     FINE(ResponseHeader.ACCEPTED, "Fine"),
     STATS_TOO_HIGH(ResponseHeader.REJECTED, "Stats Too High"),
