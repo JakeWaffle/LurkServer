@@ -4,7 +4,10 @@ import org.slf4j.LoggerFactory;
 
 import java.io.*;
 import org.eclipse.jetty.util.ajax.JSON;
+
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 public class GameMap {
@@ -54,11 +57,22 @@ public class GameMap {
     }
 
     /**
+     * This is meant to get a list of information about the room that will be sent back to the client. In addition
+     * to the room's info it will include players and monsters in the room.
+     * @param room This is the room that the info will be about.
+     * @return A list of strings that are meant to be sent to the client in separate INFOM messages.
+     */
+    public synchronized List<String> getRoomInfo(String room) {
+        return _rooms.get(room).getRoomInfo();
+    }
+
+    /**
      * This triggers monsters and players in a room to fight!
      * @param room All players and monsters will fight in the current room.
      */
     public synchronized void fightMonsters(String room) {
-        //TODO Finish the fighting of monsters and players in a room.
+
+        _rooms.get(room).fight();
     }
 
     /**

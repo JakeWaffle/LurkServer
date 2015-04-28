@@ -67,12 +67,12 @@ public class Game {
                 String.format("%s\n\n%s%s%s",
                 _gameDescription,
                 //TODO Extension stats string construction.
-                players.getPlayer(playerName).getStats(),
+                players.getPlayer(playerName).getInfo(),
                 players.getPlayerList()));*/
         return new Response(ResponseHeader.INFORM,
                 String.format("%s\n\n%s\n\n%s",
                         _gameDescription,
-                        players.getPlayer(playerName).getStats(),
+                        players.getPlayer(playerName).getInfo(),
                         players.getPlayerList()));
     }
 

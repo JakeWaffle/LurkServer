@@ -114,12 +114,15 @@ public class Client extends Thread {
             _mailMan.sendMessage(responseMsgType.getResponse());
         }
         else if (command.type == CommandType.START) {
-            if (_player.isReady()) {
-                _mailMan.sendMessage(ResponseMessage.NOT_READY.getResponse());
-            }
-            else {
+            if (_player.start()) {
+                List<String> infoList = _game.map.getRoomInfo(_player.currentRoom());
+                for (String info : infoList) {
+                    _mailMan.sendMessage(new Response(ResponseHeader.INFORM, info));
+                }
                 _player.saveData();
             }
+            else
+                _mailMan.sendMessage(ResponseMessage.NOT_READY.getResponse());
         }
         else
             _mailMan.sendMessage(ResponseMessage.INCORRECT_STATE.getResponse());
@@ -129,6 +132,11 @@ public class Client extends Thread {
         if (command.type == CommandType.ACTION) {
             if (command.actionType == ActionType.CHANGE_ROOM) {
                 _mailMan.sendMessage(_game.changeRoom(_player, command.parameter));
+
+                List<String> infoList = _game.map.getRoomInfo(_player.currentRoom());
+                for (String info : infoList) {
+                    _mailMan.sendMessage(new Response(ResponseHeader.INFORM, info));
+                }
             }
             else if (command.actionType == ActionType.FIGHT) {
                 _game.map.fightMonsters(_player.currentRoom());
@@ -139,7 +147,10 @@ public class Client extends Thread {
                 _mailMan.sendMessage(ResponseMessage.INCORRECT_STATE.getResponse());
         }
         else if (command.type == CommandType.START) {
-            //TODO Return information in the current room!
+            List<String> infoList = _game.map.getRoomInfo(_player.currentRoom());
+            for (String info : infoList) {
+                _mailMan.sendMessage(new Response(ResponseHeader.INFORM, info));
+            }
         }
         else
             _mailMan.sendMessage(ResponseMessage.INCORRECT_STATE.getResponse());

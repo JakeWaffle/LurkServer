@@ -113,30 +113,33 @@ public class Player {
      * the game.
      */
     public void saveData() {
-        Map<String, Object> data = new HashMap<String, Object>();
+        if (_started) {
+            Map<String, Object> data = new HashMap<String, Object>();
 
-        data.put("description", _description);
-        data.put("gold", _gold);
-        data.put("attack", _attack);
-        data.put("defense", _defense);
-        data.put("regen", _regen);
-        data.put("status", _status.getStatus());
-        data.put("health", _health);
-        data.put("started", _started);
+            data.put("description", _description);
+            data.put("gold", _gold);
+            data.put("attack", _attack);
+            data.put("defense", _defense);
+            data.put("regen", _regen);
+            data.put("status", _status.getStatus());
+            data.put("health", _health);
+            data.put("started", _started);
 
-        String jsonData = JSON.toString(data);
-        FileOutputStream out = null;
-        try {
-            out = new FileOutputStream(_playerFile);
-            out.write(jsonData.getBytes());
-        } catch (FileNotFoundException e) {
-            _logger.error("Player data file failed to save", e);
-        } catch (IOException e) {
-            _logger.error("Player data file failed to save", e);
-        } finally {
+            String jsonData = JSON.toString(data);
+            FileOutputStream out = null;
             try {
-                out.close();
-            } catch (IOException e) {}
+                out = new FileOutputStream(_playerFile);
+                out.write(jsonData.getBytes());
+            } catch (FileNotFoundException e) {
+                _logger.error("Player data file failed to save", e);
+            } catch (IOException e) {
+                _logger.error("Player data file failed to save", e);
+            } finally {
+                try {
+                    out.close();
+                } catch (IOException e) {
+                }
+            }
         }
     }
 
@@ -144,12 +147,14 @@ public class Player {
      * This will respond to the Start command essentially.
      * @return A boolean saying whether this player is ready to be started.
      */
-    public boolean isReady() {
+    public boolean start() {
         boolean ready = true;
         if (_description == null ||
                 (_attack == 0 && _defense == 0 && _regen == 0)) {
             ready = false;
         }
+        else
+            _started = true;
         return ready;
     }
 
@@ -221,7 +226,20 @@ public class Player {
         return response;
     }
 
-    public String getStats() {
+    public String getInfo() {
+        /*
+        Name:  Trudy
+        Description: Black Hat Security Expert
+        Gold: 10
+        Attack: 60
+        Defense: 30
+        Regen: 10
+        Status: ALIVE
+        Location: Broom Closet
+        Health: 100
+        Started:  YES
+        */
+
         return  String.format("Name: %s\n",name)+
                 String.format("Description: %s\n", _description)+
                 String.format("Gold: %d\n", _gold)+
@@ -231,6 +249,6 @@ public class Player {
                 String.format("Status: %s\n", _status.getStatus())+
                 String.format("Location: %s\n", _location)+
                 String.format("Health: %d\n", _health)+
-                String.format("Started: %s\n", _started ? "YES" : "NO");
+                String.format("Started: %s", _started ? "YES" : "NO");
     }
 }

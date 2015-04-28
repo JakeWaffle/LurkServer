@@ -2,10 +2,12 @@
     "starting_room":"Lobby",
     "rooms": {
         "Lobby": {
+            "description": "This place seems very spooky. There are spider webs everywhere and a nice layer of dust on everything. The only clean object is a phone on the desk that seems to have been used recently.",
             "connections": ["Hall1"],
             "monsters": []
         },
         "Hall1": {
+            "description": "Trash cans, paper work and water bottles litter the ground. The floors squeak and the ceiling is rotting.",
             "connections": ["Men's Bathroom1"],
             "monsters": [
                 {
@@ -20,6 +22,7 @@
             ]
         },
         "Men's Bathroom1": {
+            "description": "This place smells awful. You should leave right now or suffer a fatal nose injury.",
             "connections": ["Hall1", "Stall1", "Stall2"],
             "monsters": [
                 {
@@ -34,6 +37,7 @@
             ]
         },
         "Stall1": {
+            "description": "No words can describe this place.",
             "connections": ["Men's Bathroom1"],
             "monsters": [
                 {
@@ -48,6 +52,7 @@
             ]
         },
         "Stall2": {
+            "description": "This stall is relatively clean. It's almost spooky how clean it is.",
             "connections": ["Men's Bathroom1"],
             "monsters": []
         },
