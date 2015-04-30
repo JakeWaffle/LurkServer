@@ -50,10 +50,12 @@ public class Client extends Thread {
                                 if (response == ResponseMessage.NEW_PLAYER) {
                                     _clientState = ClientState.NOT_STARTED;
                                     _player = _game.players.getPlayer(id);
+                                    _player.setClient(Client.this);
                                 }
                                 else if (response == ResponseMessage.REPRISING_PLAYER) {
                                     _clientState = ClientState.STARTED;
                                     _player = _game.players.getPlayer(id);
+                                    _player.setClient(Client.this);
                                 }
 
                                 _mailMan.sendMessage(response.getResponse());

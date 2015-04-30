@@ -4,8 +4,10 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Random;
 
 public class  Room {
+    private Random              _randomGenerator;
     private String              _roomName;
     private String              _description;
     private String              _roomInfo;
@@ -14,6 +16,7 @@ public class  Room {
     private Map<String, Player> _players;
 
     public Room(String roomName, Map<String, Object> roomData) {
+        _randomGenerator        = new Random();
         _roomName               = roomName;
         _description            = (String)roomData.get("description");
         _connections            = new ArrayList<String>();
@@ -64,7 +67,35 @@ public class  Room {
      * This triggers players and monsters to battle each other.
      */
     public void fight() {
+        if (!areMonstersDead()) {
+            for (Player player : _players.values()) {
+                Monster randomMonster = randomMonster();
+                player.fight(randomMonster);
+            }
+        }
+    }
 
+    private boolean areMonstersDead() {
+        boolean monstersAreDead = true;
+        for (Monster monster : _monsters) {
+            if (!monster.isDead()) {
+                monstersAreDead = false;
+                break;
+            }
+        }
+        return monstersAreDead;
+    }
+
+    /**
+     * @return A random monster in the room that isn't dead.
+     */
+    private Monster randomMonster() {
+        Monster monster;
+        do {
+            int index   = _randomGenerator.nextInt(_monsters.size());
+            monster     = _monsters.get(index);
+        } while(monster.isDead());
+        return monster;
     }
 
     /**

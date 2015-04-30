@@ -33,6 +33,10 @@ public class Monster {
         _status      = BeingStatus.ALIVE;
     }
 
+    public boolean isDead() {
+        return _health <= 0;
+    }
+
     /**
      * This returns the information for the monster so it can be sent to the client.
      * @return

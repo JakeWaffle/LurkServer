@@ -15,6 +15,7 @@ public class GameMap {
 
     private Map<String, Room> _rooms;
     private String            _startingRoom;
+    private ClientPool        _clients;
     
     public GameMap() {
         _rooms         = new HashMap<String, Room>();
@@ -71,7 +72,6 @@ public class GameMap {
      * @param room All players and monsters will fight in the current room.
      */
     public synchronized void fightMonsters(String room) {
-
         _rooms.get(room).fight();
     }
 

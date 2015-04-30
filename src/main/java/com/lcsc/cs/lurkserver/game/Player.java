@@ -18,13 +18,15 @@ public class Player {
     private final   int             MAX_STAT_POINTS = 100;
     private final   int             MAX_HEALTH      = 100;
     private final   File            _playerFile;
+    //This is the player's client!
+    private         Client          _client;
     public          String          name;
     private         String          _description;
     private         int             _gold;
     private         int             _attack;
     private         int             _defense;
     private         int             _regen;
-    private BeingStatus _status;
+    private         BeingStatus     _status;
     private         String          _location;
     private         int             _health;
     private         boolean         _started;
@@ -61,6 +63,14 @@ public class Player {
     }
 
     /**
+     * This sets up a way for us to contact the client using the Player's object.
+     * @param client The client that can communicate with the user.
+     */
+    public void setClient(Client client) {
+        _client = client;
+    }
+
+    /**
      * This just sets some default data for the new player.
      * @param startingRoom This is the room that the player starts out in.
      */
@@ -71,7 +81,6 @@ public class Player {
         _defense     = 0;
         _regen       = 0;
         _status      = BeingStatus.ALIVE;
-        //TODO The starting location should always be used for a joining player!
         _location    = startingRoom;
         _health      = MAX_HEALTH;
         _started     = false;
@@ -172,6 +181,14 @@ public class Player {
      */
     public void changeRoom(String newRoom) {
         _location = newRoom;
+    }
+
+    /**
+     * This will make a player and monster fight each other.
+     * @param monster This is the monster this player will try to beat up.
+     */
+    public void fight(Monster monster) {
+
     }
 
     /**
