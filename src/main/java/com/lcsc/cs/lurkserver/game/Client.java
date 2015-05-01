@@ -104,6 +104,27 @@ public class Client extends Thread {
     }
 
     /**
+     * This is for relaying the room info to the user without the user asking for it.
+     * This is called if a player joins in on a fight.
+     * @param infoList This is a list of INFOM messages that must be sent to the user.
+     */
+    public synchronized void sendRoomInfo(List<String> infoList) {
+        for (String info : infoList) {
+            _mailMan.sendMessage(new Response(ResponseHeader.INFORM, info));
+        }
+    }
+
+    /**
+     * This relays the status of the player after being involved in a fight.
+     * @param health The health of the player after the fight.
+     * @param goldCollected The gold collected during the fight.
+     */
+    public synchronized void sendStatus(int health, int goldCollected) {
+        _mailMan.sendMessage(new Response(ResponseHeader.NOTIFY, String.format("Collected %d Gold", goldCollected)));
+        _mailMan.sendMessage(new Response(ResponseHeader.NOTIFY, String.format("Health %d", health)));
+    }
+
+    /**
      * This handles the commands sent from the client while the client is in the NOT_STARTED state.
      * @param command This is the command that the client has sent.
      */
@@ -136,9 +157,7 @@ public class Client extends Thread {
                 _mailMan.sendMessage(_game.changeRoom(_player, command.parameter));
 
                 List<String> infoList = _game.map.getRoomInfo(_player.currentRoom());
-                for (String info : infoList) {
-                    _mailMan.sendMessage(new Response(ResponseHeader.INFORM, info));
-                }
+                sendRoomInfo(infoList);
             }
             else if (command.actionType == ActionType.FIGHT) {
                 _game.map.fightMonsters(_player.currentRoom());
@@ -150,9 +169,7 @@ public class Client extends Thread {
         }
         else if (command.type == CommandType.START) {
             List<String> infoList = _game.map.getRoomInfo(_player.currentRoom());
-            for (String info : infoList) {
-                _mailMan.sendMessage(new Response(ResponseHeader.INFORM, info));
-            }
+            sendRoomInfo(infoList);
         }
         else
             _mailMan.sendMessage(ResponseMessage.INCORRECT_STATE.getResponse());

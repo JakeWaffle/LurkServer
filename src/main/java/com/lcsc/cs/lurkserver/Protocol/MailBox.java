@@ -68,11 +68,13 @@ public class MailBox extends Thread {
                         if (message.length() > start+1 && (start+1) >= 0 &&
                                 message.length() > end && (end) >= 0) {
                             Command newCmd = constructCommand(type, message.substring(start + 1, end));
-                            commands.add(newCmd);
+                            if (newCmd != null)
+                                commands.add(newCmd);
                         }
                         else {
                             Command newCmd = constructCommand(type, "");
-                            commands.add(newCmd);
+                            if (newCmd != null)
+                                commands.add(newCmd);
                         }
 
                         type            = CommandType.fromString(matcher.group());
@@ -81,12 +83,14 @@ public class MailBox extends Thread {
                 }
                 if (message.length() > start+1 && (start+1) >= 0){
                     Command newCmd = constructCommand(type, message.substring(start + 1));
-                    commands.add(newCmd);
+                    if (newCmd != null)
+                        commands.add(newCmd);
                 }
                 //In this case only a header was sent from the user.
                 else {
                     Command newCmd = constructCommand(type, "");
-                    commands.add(newCmd);
+                    if (newCmd != null)
+                        commands.add(newCmd);
                 }
             }
             else if (message.length() == 0) {
@@ -101,14 +105,38 @@ public class MailBox extends Thread {
         }
     }
 
+    /**
+     * This will take in the information sent by the user and will construct a Command object that
+     * will make the rest of the program easier to deal with.
+     * @param type This is the first header that was given by the user.
+     * @param body This is the body following the header (this may be an empty string.)
+     * @return A Command object that was constructed or null if the user's input was invalid.
+     */
     private Command constructCommand(CommandType type, String body) {
         Command cmd = null;
+        body        = body.trim();
+
         if (type == CommandType.LEAVE) {
             cmd     = new Command(type);
             _done   = true;
         }
         else if (type == CommandType.ACTION) {
-            //TODO Search for the ActionType in the parameter and handle accordingly!
+            ActionType aType;
+            if (body.length() > 5) {
+                aType = ActionType.fromString(body.substring(0, 5));
+                if (body.length() > 6)
+                    body = body.substring(6);
+                else
+                    body = "";
+            }
+            else
+                aType = ActionType.fromString(body.substring(0));
+            if (aType == ActionType.CHANGE_ROOM ||
+                    aType == ActionType.MESSAGE) {
+                cmd             = new Command(type, aType, body);
+            }
+            else if (aType == ActionType.FIGHT)
+                cmd             = new Command(type, aType);
         }
         else if (type == CommandType.CONNECT ||
                 type == CommandType.SET_ATTACK_STAT ||

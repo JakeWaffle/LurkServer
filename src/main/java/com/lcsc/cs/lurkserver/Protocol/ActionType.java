@@ -17,4 +17,15 @@ public enum ActionType {
     public String getActionName() {
         return this.actionName;
     }
+
+    public static ActionType fromString(String actionName) {
+        if (actionName != null) {
+            for (ActionType c : ActionType.values()) {
+                if (actionName.equalsIgnoreCase(c.getActionName())) {
+                    return c;
+                }
+            }
+        }
+        return null;
+    }
 };

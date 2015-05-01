@@ -7,13 +7,14 @@ import org.slf4j.LoggerFactory;
 
 import java.io.*;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 /**
  * Created by Jake on 4/19/2015.
  * This holds a logged in player's data.
  */
-public class Player {
+public class Player implements Being{
     private static final Logger     _logger         = LoggerFactory.getLogger(Player.class);
     private final   int             MAX_STAT_POINTS = 100;
     private final   int             MAX_HEALTH      = 100;
@@ -58,8 +59,49 @@ public class Player {
         return new File(playerDataDir, playerName+".pldat").exists();
     }
 
-    public boolean isDead() {
+    public synchronized boolean isDead() {
         return _status == BeingStatus.DEAD;
+    }
+
+    /**
+     * This gets the attack of the player so damage can be done to an enemy.
+     * @return The value of the player's attack or 0 if the player is dead.
+     */
+    @Override
+    public synchronized int getAttack() {
+        return isDead() ? 0 : _attack;
+    }
+
+    /**
+     * This is called when an enemy is attacking the player.
+     * @param damage This is the attack of the enemy in addition to the d20 roll that was obtained.
+     *               If a 1 was rolled, this method will not be called and damage will be done to the user
+     *               instead.
+     * @return The amount of gold dropped is returned. Gold is only dropped if the player has died.
+     */
+    @Override
+    public synchronized int doDamage(int damage) {
+        if (damage > _defense)
+            _health -= damage-_defense;
+
+        int gold = 0;
+        if (_health <= 0) {
+            _status = BeingStatus.DEAD;
+            gold    = _gold;
+            _gold   = 0;
+        }
+        return gold;
+    }
+
+    /**
+     * This is called each time this Being does damage to another Being.
+     * @param gold This is the gold that is picked up after damage is done to another Being. If the other
+     *             Being isn't dead, then zero gold will be passed to this method.
+     */
+    @Override
+    public synchronized void pickedUpGold(int gold) {
+        _gold += gold;
+        _client.sendStatus(_health, gold);
     }
 
     /**
@@ -68,6 +110,14 @@ public class Player {
      */
     public void setClient(Client client) {
         _client = client;
+    }
+
+    /**
+     * This will send the current room info to the client, which will send it to the user.
+     * @param infoList A list of the current things in the room.
+     */
+    public synchronized void sendRoomInfo(List<String> infoList) {
+        _client.sendRoomInfo(infoList);
     }
 
     /**
@@ -121,7 +171,7 @@ public class Player {
      * This is used to save the player's current data to a file so it can be loaded next time that player joins
      * the game.
      */
-    public void saveData() {
+    public synchronized void saveData() {
         if (_started) {
             Map<String, Object> data = new HashMap<String, Object>();
 
@@ -179,16 +229,8 @@ public class Player {
      * Changes the location of the player.
      * @param newRoom This is the new location of the player.
      */
-    public void changeRoom(String newRoom) {
+    public synchronized void changeRoom(String newRoom) {
         _location = newRoom;
-    }
-
-    /**
-     * This will make a player and monster fight each other.
-     * @param monster This is the monster this player will try to beat up.
-     */
-    public void fight(Monster monster) {
-
     }
 
     /**
@@ -243,7 +285,7 @@ public class Player {
         return response;
     }
 
-    public String getInfo() {
+    public synchronized String getInfo() {
         /*
         Name:  Trudy
         Description: Black Hat Security Expert

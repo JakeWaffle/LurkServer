@@ -8,7 +8,7 @@ import java.util.Map;
 /**
  * Created by Jake on 4/26/2015.
  */
-public class Monster {
+public class Monster implements Being {
     private static final Logger _logger         = LoggerFactory.getLogger(Monster.class);
     public  final   String      name;
     private         String      _description;
@@ -33,15 +33,55 @@ public class Monster {
         _status      = BeingStatus.ALIVE;
     }
 
-    public boolean isDead() {
+    public synchronized boolean isDead() {
         return _health <= 0;
+    }
+
+    /**
+     * This gets the attack of the player so damage can be done to an enemy.
+     * @return The value of the player's attack or 0 if the player is dead.
+     */
+    @Override
+    public synchronized int getAttack() {
+        return isDead() ? 0 : _attack;
+    }
+
+    /**
+     * This is called when an enemy is attacking the monster.
+     * @param damage This is the attack of the enemy in addition to the d20 roll that was obtained.
+     *               If a 1 was rolled, this method will not be called and damage will be done to the user
+     *               instead.
+     * @return The amount of gold dropped is returned. Gold is only dropped if the player has died.
+     */
+    @Override
+    public synchronized int doDamage(int damage) {
+        if (damage > _defense)
+            _health -= damage-_defense;
+
+        int gold = 0;
+        if (_health <= 0) {
+            _status = BeingStatus.DEAD;
+            gold    = _gold;
+            _gold   = 0;
+        }
+        return gold;
+    }
+
+    /**
+     * This is called each time this Being does damage to another Being.
+     * @param gold This is the gold that is picked up after damage is done to another Being. If the other
+     *             Being isn't dead, then zero gold will be passed to this method.
+     */
+    @Override
+    public synchronized void pickedUpGold(int gold) {
+        _gold += gold;
     }
 
     /**
      * This returns the information for the monster so it can be sent to the client.
      * @return
      */
-    public String getInfo() {
+    public synchronized String getInfo() {
         /*
         Name:  Glog
         Description: A slimy and toothy character

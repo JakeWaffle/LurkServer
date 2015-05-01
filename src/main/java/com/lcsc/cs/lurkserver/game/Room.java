@@ -59,20 +59,84 @@ public class  Room {
      * @param otherRoom This is the other room that may or may not be connected to this one.
      * @return A boolean informing if the given room is connected to this room or not.
      */
-    public boolean isConnected(String otherRoom) {
+    public synchronized boolean isConnected(String otherRoom) {
         return _connections.contains(otherRoom);
     }
 
     /**
      * This triggers players and monsters to battle each other.
      */
-    public void fight() {
+    public synchronized void fight() {
         if (!areMonstersDead()) {
             for (Player player : _players.values()) {
-                Monster randomMonster = randomMonster();
-                player.fight(randomMonster);
+                if (!player.isDead()) {
+                    Monster randomMonster = randomMonster();
+
+                    //Selects whether player or monster attacks first.
+                    //Player == 0, Monster == 1.
+                    int firstAttacker = _randomGenerator.nextInt(2);
+
+                    if (firstAttacker == 0)
+                        oneVsOne(player, randomMonster);
+                    else
+                        oneVsOne(randomMonster, player);
+
+                    player.sendRoomInfo(getRoomInfo());
+                }
             }
         }
+    }
+
+    /**
+     * This utilizes the Being interface to make two Beings do damage to each other using the
+     * d20 system that has been designed for this game.
+     * @param person1 This is the first person to attack.
+     * @param person2 This is the second person to attack.
+     */
+    private void oneVsOne(Being person1, Being person2) {
+        //Person1 attacks person2.
+        int atk     = person1.getAttack();
+        int d20Roll = rollD20();
+        //This is the gold dropped if a person happens to die.
+        int gold;
+
+        if (d20Roll == 1) {
+            gold = person1.doDamage(atk);
+            person2.pickedUpGold(gold);
+        }
+        else if (d20Roll == 20) {
+            gold = person2.doDamage((2 * atk) + d20Roll);
+            person1.pickedUpGold(gold);
+        }
+        else {
+            gold = person2.doDamage(atk + d20Roll);
+            person1.pickedUpGold(gold);
+        }
+
+        //Person2 attacks person1.
+        atk         = person2.getAttack();
+        d20Roll     = rollD20();
+
+        if (d20Roll == 1) {
+            gold = person2.doDamage(atk);
+            person1.pickedUpGold(gold);
+        }
+        else if (d20Roll == 20) {
+            gold = person1.doDamage((2 * atk) + d20Roll);
+            person2.pickedUpGold(gold);
+        }
+        else {
+            gold = person1.doDamage(atk + d20Roll);
+            person2.pickedUpGold(gold);
+        }
+    }
+
+    /**
+     * This will roll a d20 and return the results.
+     * @return An integer in [1,20]
+     */
+    private int rollD20() {
+        return _randomGenerator.nextInt(20)+1;
     }
 
     private boolean areMonstersDead() {
@@ -103,7 +167,7 @@ public class  Room {
      * to the room's info it will include players and monsters in the room.
      * @return A list of strings that are meant to be sent to the client in separate INFOM messages.
      */
-    public List<String> getRoomInfo() {
+    public synchronized List<String> getRoomInfo() {
         List<String> infoList = new ArrayList<String>();
 
         for (Player player : _players.values()) {
@@ -113,8 +177,6 @@ public class  Room {
         for (Monster monster : _monsters) {
             infoList.add(monster.getInfo());
         }
-
-
 
         infoList.add(_roomInfo);
 
@@ -127,7 +189,7 @@ public class  Room {
      * @param player This is the player that has entered the room.
      * @return The amount of gold that was picked up.
      */
-    public int addPlayer(Player player) {
+    public synchronized int addPlayer(Player player) {
         int gold = 0;
         _players.put(player.name, player);
         return gold;
@@ -137,7 +199,7 @@ public class  Room {
      * This will remove a player from this room.
      * @param playerName This is the player that has left the room.
      */
-    public void removePlayer(String playerName) {
+    public synchronized void removePlayer(String playerName) {
         _players.remove(playerName);
     }
 }
