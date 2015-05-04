@@ -115,6 +115,14 @@ public class Client extends Thread {
     }
 
     /**
+     * This will send a message to the user from another user.
+     * @param message The message that is to be sent.
+     */
+    public synchronized void sendMessage(String message) {
+        _mailMan.sendMessage(new Response(ResponseHeader.MESSAGE, message));
+    }
+
+    /**
      * This relays the status of the player after being involved in a fight.
      * @param health The health of the player after the fight.
      * @param goldCollected The gold collected during the fight.
@@ -138,11 +146,13 @@ public class Client extends Thread {
         }
         else if (command.type == CommandType.START) {
             if (_player.start()) {
-                List<String> infoList = _game.map.getRoomInfo(_player.currentRoom());
+                List<String> infoList = _game.map.getRoomInfo(_player.currentRoom(), _player.name);
                 for (String info : infoList) {
                     _mailMan.sendMessage(new Response(ResponseHeader.INFORM, info));
                 }
                 _player.saveData();
+
+                _clientState = ClientState.STARTED;
             }
             else
                 _mailMan.sendMessage(ResponseMessage.NOT_READY.getResponse());
@@ -154,21 +164,35 @@ public class Client extends Thread {
     public synchronized void handleStartedState(Command command) {
         if (command.type == CommandType.ACTION) {
             if (command.actionType == ActionType.CHANGE_ROOM) {
-                _mailMan.sendMessage(_game.changeRoom(_player, command.parameter));
-
-                List<String> infoList = _game.map.getRoomInfo(_player.currentRoom());
-                sendRoomInfo(infoList);
+                for (Response response : _game.changeRoom(_player, command.parameter)) {
+                    _mailMan.sendMessage(response);
+                }
+                if (_player.currentRoom().equals(command.parameter)) {
+                    List<String> infoList = _game.map.getRoomInfo(_player.currentRoom(), _player.name);
+                    sendRoomInfo(infoList);
+                }
             }
             else if (command.actionType == ActionType.FIGHT) {
                 _game.map.fightMonsters(_player.currentRoom());
             }
             else if (command.actionType == ActionType.MESSAGE) {
+                int firstSpaceIndx  = command.parameter.indexOf(" ");
+
+                String playerName   = command.parameter.substring(0, firstSpaceIndx);
+                String message      = command.parameter.substring(firstSpaceIndx+1);
+                _mailMan.sendMessage(_game.clients.sendMessage(playerName, message));
             }
             else
                 _mailMan.sendMessage(ResponseMessage.INCORRECT_STATE.getResponse());
         }
+        else if (command.extension == ExtensionType.PICK_UP) {
+            _mailMan.sendMessage(_game.map.pickupKey(_player, command.parameter));
+        }
+        else if (command.extension == ExtensionType.UNLOCK) {
+            _mailMan.sendMessage(_game.map.unlockDoor(_player, command.parameter));
+        }
         else if (command.type == CommandType.START) {
-            List<String> infoList = _game.map.getRoomInfo(_player.currentRoom());
+            List<String> infoList = _game.map.getRoomInfo(_player.currentRoom(), _player.name);
             sendRoomInfo(infoList);
         }
         else

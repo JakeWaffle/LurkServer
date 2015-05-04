@@ -6,6 +6,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.*;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -31,6 +32,7 @@ public class Player implements Being{
     private         String          _location;
     private         int             _health;
     private         boolean         _started;
+    private         List<String>    _keys;
 
     /**
      * The constructor for the player. This will automatically load the player's data from its existing data file
@@ -49,6 +51,18 @@ public class Player implements Being{
         else {
             loadDefaultData(startingRoom);
         }
+    }
+
+    /**
+     * This will regenerate the player's health.
+     * @param secondsPassed This is how much time has passed.
+     */
+    public synchronized void regenHealth(int secondsPassed) {
+        int regeneratedHealth = ((Double)((secondsPassed/10.)*(double)_regen)).intValue();
+        if (regeneratedHealth + _health > MAX_HEALTH)
+            _health = MAX_HEALTH;
+        else
+            _health += regeneratedHealth;
     }
 
     /**
@@ -105,6 +119,29 @@ public class Player implements Being{
     }
 
     /**
+     * Checks to see if the player has a key that belongs to some door.
+     * @param keyName The name of the key.
+     * @return true if the player has the key, false otherwise.
+     */
+    public synchronized boolean hasKey(String keyName) {
+        return _keys.contains(keyName);
+    }
+
+    /**
+     * This is called when the PCKUP extension is used.
+     * @param keyName The name of the key that is being picked up.
+     * @return true if the player doesn't have the key already, false otherwise.
+     */
+    public synchronized boolean pickUpKey(String keyName) {
+        boolean success = false;
+        if (!_keys.contains(keyName)) {
+            _keys.add(keyName);
+            success = true;
+        }
+        return success;
+    }
+
+    /**
      * This sets up a way for us to contact the client using the Player's object.
      * @param client The client that can communicate with the user.
      */
@@ -134,6 +171,7 @@ public class Player implements Being{
         _location    = startingRoom;
         _health      = MAX_HEALTH;
         _started     = false;
+        _keys        = new ArrayList<String>();
     }
 
     /**
@@ -156,6 +194,8 @@ public class Player implements Being{
             _location    = startingRoom;
             _health      = ((Long)data.get("health")).intValue();
             _started     = ((Boolean)data.get("started")).booleanValue();
+
+            _keys        = new ArrayList<String>();
         } catch (FileNotFoundException e) {
             _logger.error("Problem loading the player data file", e);
         } catch (IOException e) {

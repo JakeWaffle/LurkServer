@@ -1,0 +1,190 @@
+{
+    "game_description": "After hearing about a creepy abandoned office that rumors to have a bunch of treasure, you and a group of friends are compelled to check it out. You enter with a total of 100 stat points and must find your way throughout the maze of rooms. Doors may be locked so be sure to look around in order to find their keys. The room descriptions will say if they have a key or not.",
+    "starting_room":"Lobby",
+    "rooms": {
+        "Lobby": {
+             "gold":10,
+            "description": "This place seems very spooky. There are spider webs everywhere and a nice layer of dust on everything. The only clean object is a phone on the desk that seems to have been used recently and there is a 'Red Key' by the phone.",
+            "connections": ["Hall"],
+            "monsters": [],
+            "keys": ["Red Key"],
+            "locked_rooms": {
+                "Hall":"Red Key"
+            }
+        },
+        "Hall": {
+            "gold":10,
+            "description": "Trash cans, paper work and water bottles litter the ground. The floors squeak and the ceiling is rotting.",
+            "connections": ["Lobby", "Men's Bathroom", "Conference Room", "Albert's Room", "Jeff's Room", "Closet", "Lunch Room"],
+            "monsters": [
+                {
+                    "name": "Albert",
+                    "description": "A man with glasses that will mercilessly beat you with his red stapler.",
+                    "gold": 50,
+                    "attack": 50,
+                    "defense": 10,
+                    "regen": 10,
+                    "max_health": 100
+                }
+            ],
+            "keys": [],
+            "locked_rooms": {
+                "Conference Room":"Orange Key",
+                "Lunch Room":"Green Key",
+                "Albert's Room":"Yellow Key",
+                "Jeff's Room":"Purple Key"
+            }
+        },
+        "Men's Bathroom": {
+            "gold":0,
+            "description": "This place smells awful. You should leave right now or suffer a fatal nose injury.",
+            "connections": ["Hall", "Stall1", "Stall2"],
+            "monsters": [
+                {
+                    "name": "Simon",
+                    "description": "He is just standing there washing his hands and whistling 'The Final Countdown.' He doesn't seem to notice you.",
+                    "gold": 100,
+                    "attack": 20,
+                    "defense": 20,
+                    "regen": 20,
+                    "max_health": 100
+                }
+            ],
+            "keys": [],
+            "locked_rooms": {"Stall2":"Blue Key"}
+        },
+        "Stall1": {
+            "gold":10,
+            "description": "No words can describe this place, but in the filth you see a 'Blue Key'.",
+            "connections": ["Men's Bathroom"],
+            "monsters": [
+                {
+                    "name": "Jeff",
+                    "description": "This guy is real mad! He is turning purple as he is staring at you.",
+                    "gold": 100,
+                    "attack": 50,
+                    "defense": 40,
+                    "regen": 50,
+                    "max_health": 100
+                }
+            ],
+            "keys": ["Blue Key"],
+            "locked_rooms": {}
+        },
+        "Stall2": {
+            "gold":50,
+            "description": "This stall is relatively clean. It's almost spooky how clean it is. Behind the toilet there is an 'Orange Key'",
+            "connections": ["Men's Bathroom"],
+            "monsters": [],
+            "keys": ["Orange Key"],
+            "locked_rooms": {}
+        },
+        "Conference Room": {
+            "gold":10,
+            "description": "A table and a white board is all that seems to be in this room. A closer look reveals a 'Green Key' under the table.",
+            "connections": ["Hall"],
+            "monsters": [
+                {
+                    "name": "Business Man",
+                    "description": "No face and no name tag. You have no idea you this person is, but you can see that he is a business man you is ready for a beat down with his brief case and brass knuckles.",
+                    "gold": 30,
+                    "attack": 60,
+                    "defense": 10,
+                    "regen": 10,
+                    "max_health": 100
+                },
+                {
+                    "name": "Pizze Guy",
+                    "description": "This is just an unlucky day for the pizza guy. He was just on his way out the door when you came in.",
+                    "gold": 10,
+                    "attack": 10,
+                    "defense": 10,
+                    "regen": 10,
+                    "max_health": 100
+                },
+                {
+                    "name": "CEO",
+                    "description": "You know this person is the ceo because of the clothes and attitude she has. Watch out though it looks like there's a gun on the table by her though.",
+                    "gold": 10,
+                    "attack": 10,
+                    "defense": 10,
+                    "regen": 10,
+                    "max_health": 100
+                },
+            ],
+            "keys": ["Green Key"],
+            "locked_rooms": {}
+        },
+        "Closet": {
+            "gold":5,
+            "description": "A bucket and some office supplies litter this dusty closet.",
+            "connections": ["Hall"],
+            "monsters": [
+                {
+                    "name": "Broom Monster",
+                    "description": "This monster's sole purpose is to clean you up by force!",
+                    "gold": 20,
+                    "attack": 10,
+                    "defense": 10,
+                    "regen": 10,
+                    "max_health": 100
+                }
+            ],
+            "keys": [],
+            "locked_rooms": {}
+        },
+        "Lunch Room": {
+            "gold":10,
+            "description": "A smell that's too unbearable comes from the fridge and the room is covered in mold from what appears to be the aftermath of a food fight years ago. Next to a slimy piece of pizze there is a 'Yellow Key'.",
+            "connections": ["Hall"],
+            "monsters": [
+                {
+                    "name": "Pizza Monster",
+                    "description": "This monster smells like it went bad long ago. Do not even try to eat it!",
+                    "gold": 50,
+                    "attack": 50,
+                    "defense": 10,
+                    "regen": 30,
+                    "max_health": 100
+                },
+                {
+                    "name": "Diet Soda Monster",
+                    "description": "This monster may sound delicious to some, but it exists solely to give you cancer!",
+                    "gold": 50,
+                    "attack": 20,
+                    "defense": 60,
+                    "regen": 20,
+                    "max_health": 100
+                }
+            ],
+            "keys": ["Yellow Key"],
+            "locked_rooms": {}
+        },
+        "Albert's Room": {
+            "gold":10,
+            "description": "There are so many staplers in this room and everything in here has been stapled numerous times. Under a pile of staplers you find a 'Purple Key'.",
+            "connections": ["Hall"],
+            "monsters": [
+                {
+                    "name": "Stapler Monster",
+                    "description": "It's a monster made of red staplers! Beware or suffer a barrage of staples to your thigh!",
+                    "gold": 100,
+                    "attack": 50,
+                    "defense": 40,
+                    "regen": 30,
+                    "max_health": 100
+                }
+            ],
+            "keys": ["Purple Key"],
+            "locked_rooms": {}
+        },
+        "Jeff's Room": {
+            "gold":1000,
+            "description": "Jeff appears to have kept his room very tidy. Under his desk appears to be a treasure chest. Inside of the chest there are three tickets to Disney Land, enjoy your trip.",
+            "connections": ["Hall"],
+            "monsters": [],
+            "keys": [],
+            "locked_rooms": {}
+        }
+    }
+}

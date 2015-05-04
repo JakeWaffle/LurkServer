@@ -1,11 +1,16 @@
 package com.lcsc.cs.lurkserver.game;
 
+import com.lcsc.cs.lurkserver.Protocol.ExtensionType;
+import com.lcsc.cs.lurkserver.Protocol.MailMan;
 import com.lcsc.cs.lurkserver.Protocol.Response;
 import com.lcsc.cs.lurkserver.Protocol.ResponseHeader;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
 
 /**
  * Created by Jake on 3/30/2015.
@@ -26,35 +31,25 @@ public class Game {
         clients = new ClientPool(players);
     }
 
-    public synchronized void update() {
+    public synchronized void update(int secondsPassed) {
         clients.update();
+        map.update(secondsPassed);
     }
 
     /**
      * This should be used when the server first is started up. It will load up the game's information.
      * The map is loaded, the game's description is loaded, the player's are loaded and whatever else.
+     * @param gameDef This map defines the game that has been loaded.
      */
-    public void loadGame(String gameDir) {
-        //This will load the game description! Whew!
-        String projRoot     = new File("").getAbsolutePath();
-        File gameDescrFile  = new File(projRoot, "data/"+gameDir+"/game_description.txt");
-
-        String gameDescription = "No one knows anything about this game... because the file does not exist!";
-        if (gameDescrFile.exists()) {
-            try {
-                RandomAccessFile file = new RandomAccessFile(gameDescrFile, "r");
-                byte[] description = new byte[(int)file.length()];
-                file.read(description);
-                gameDescription = new String(description).trim();
-            } catch (FileNotFoundException e) {
-                _logger.error("The game description file doesn't exist: " + gameDescrFile.getAbsolutePath(), e);
-            } catch (IOException e) {
-                _logger.error("Problem reading the game description file", e);
-            }
+    public void loadGame(Map<String, Object> gameDef) {
+        if (gameDef.containsKey("game_description")) {
+            _gameDescription = "GameDescription: " + (String)gameDef.get("game_description");
+            map.loadMap(gameDef);
         }
-        _gameDescription = "GameDescription: "+gameDescription;
-        
-        map.loadMap(gameDir);
+        else {
+            _logger.error("The game_description wasn't found in the game definition file.");
+            System.exit(1);
+        }
     }
 
     /**
@@ -63,17 +58,12 @@ public class Game {
      * @return The response to the QUERY command for a specific player.
      */
     public synchronized Response generateQueryResponse(String playerName) {
-        /*return new Response(ResponseType.INFORM,
-                String.format("%s\n\n%s%s%s",
-                _gameDescription,
-                //TODO Extension stats string construction.
-                players.getPlayer(playerName).getInfo(),
-                players.getPlayerList()));*/
         return new Response(ResponseHeader.INFORM,
-                String.format("%s\n\n%s\n\n%s",
+                String.format("%s\n\n%s%s\n\n%s",
                         _gameDescription,
+                        ExtensionType.getAllExtensionInfo(),
                         players.getPlayer(playerName).getInfo(),
-                        players.getPlayerList()));
+                        players.getPlayerList(playerName)));
     }
 
     /**
@@ -83,25 +73,33 @@ public class Game {
      * @return The response that will be sent back to the client. It will either be
      *         "REJEC No Connection", "RESLT Collected (int) Gold" or "RESLT Enter No Gold".
      */
-    public synchronized Response changeRoom(Player player, String newRoom) {
-        Response response;
-        if (map.areRoomsConnected(player.currentRoom(), newRoom)) {
+    public synchronized List<Response> changeRoom(Player player, String newRoom) {
+        List<Response> responses = new ArrayList<Response>();
+        String neededKeyName = map.isDoorUnlocked(player.currentRoom(), newRoom);
+        if (map.areRoomsConnected(player.currentRoom(), newRoom) && neededKeyName == null) {
             int goldReceived = map.changeRoom(player, newRoom);
             player.changeRoom(newRoom);
+            player.pickedUpGold(goldReceived);
 
             if (goldReceived == 0)
-                response = ResponseMessage.NO_GOLD.getResponse();
+                responses.add(ResponseMessage.NO_GOLD.getResponse());
             else
-                response = new Response(ResponseHeader.RESULT, String.format("Collected %d Gold", goldReceived));
+                responses.add(new Response(ResponseHeader.RESULT, String.format("Collected %d Gold", goldReceived)));
         }
-        else
-            response = ResponseMessage.NO_CONNECTION.getResponse();
+        else if (neededKeyName != null) {
+            responses.add(ResponseMessage.NO_CONNECTION.getResponse());
+            responses.add(new Response(ResponseHeader.RESULT, "The door to "+newRoom+" is locked and requires a key: '"+neededKeyName+"'"));
+        }
+        else {
+            responses.add(ResponseMessage.NO_CONNECTION.getResponse());
+        }
 
-        return response;
+        return responses;
     }
 
 
     public synchronized void stopGame() {
+        players.savePlayers();
         clients.dropClients();
     }
 }

@@ -49,12 +49,14 @@ public class PlayerPool {
 
     /**
      * This is for the QUERY command. We need a list of the active players for the response.
+     * @param excludedPlayerName This player will be excluded from the list.
      * @return A list of the active players!
      */
-    public synchronized String getPlayerList() {
+    public synchronized String getPlayerList(String excludedPlayerName) {
         String playerList = "";
         for (String playerName : _players.keySet()) {
-            playerList += "Player: "+playerName;
+            if (!playerName.equals(excludedPlayerName))
+                playerList += "Player: "+playerName+"\n";
         }
         return playerList;
     }

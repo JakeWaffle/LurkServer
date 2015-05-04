@@ -1,5 +1,7 @@
 package com.lcsc.cs.lurkserver.game;
 
+import com.lcsc.cs.lurkserver.Protocol.Response;
+import com.lcsc.cs.lurkserver.Protocol.ResponseHeader;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -7,6 +9,8 @@ import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.ConcurrentMap;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * Created by Jake on 4/6/2015.
@@ -47,6 +51,31 @@ public class ClientPool {
     }
 
     /**
+     * This will send a message to another user. This will deny any messages with server message headers in them.
+     * @param playerName The destination player.
+     * @param message The payload for the message.
+     * @return The response to the user which will either be an ACEPT Fine or REJEC Cannot Message Player.
+     */
+    public synchronized Response sendMessage(String playerName, String message) {
+        Response response;
+
+        Pattern pattern = Pattern.compile(ResponseHeader.getResponseTypePattern());
+        Matcher matcher = pattern.matcher(message);
+
+        //Has a server response header been found?
+        if (matcher.find())
+            response = ResponseMessage.CANNOT_MESSAGE_PLAYER.getResponse();
+        else if (_connectedClients.containsKey(playerName)) {
+                response = ResponseMessage.FINE.getResponse();
+                _connectedClients.get(playerName).sendMessage(message);
+        }
+        else
+            response = ResponseMessage.CANNOT_MESSAGE_PLAYER.getResponse();
+
+        return response;
+    }
+
+    /**
      * This is called whenever a user actually connects to the game with a player name that hasn't already
      * been taken.
      *
@@ -59,9 +88,15 @@ public class ClientPool {
     public synchronized ResponseMessage connectClient(final String playerName, final String unconnectedId) {
         ResponseMessage response = null;
 
-        if (_connectedClients.containsKey(playerName)) {
+        //First check the username for any server response headers or spaces.
+        Pattern pattern = Pattern.compile(ResponseHeader.getResponseTypePattern());
+        Matcher matcher = pattern.matcher(playerName);
+
+        //Has a server response header been found?
+        if (matcher.find())
             response = ResponseMessage.NAME_TAKEN;
-        }
+        else if (_connectedClients.containsKey(playerName))
+            response = ResponseMessage.NAME_TAKEN;
         //else if (player has existed, but isn't connected and is dead) {
         //  response = new Response(ResponseType.REJECTED, "Dead Without Health");
         //}

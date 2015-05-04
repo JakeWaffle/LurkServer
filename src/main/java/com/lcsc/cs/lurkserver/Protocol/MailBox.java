@@ -58,7 +58,12 @@ public class MailBox extends Thread {
             //We need to match the first item to get an idea of where we're starting and which response type we're
             // starting with.
             if (matcher.find()) {
-                CommandType type   = CommandType.fromString(matcher.group());
+                String header           = matcher.group();
+                CommandType type        = CommandType.fromString(header);
+                ExtensionType extType   = null;
+                if (type == null)
+                    extType             = ExtensionType.fromString(header);
+
                 int start           = matcher.end();
                 int end             = -1;
                 if (matcher.find()) {
@@ -66,35 +71,40 @@ public class MailBox extends Thread {
                         end             = matcher.start();
 
                         if (message.length() > start+1 && (start+1) >= 0 &&
-                                message.length() > end && (end) >= 0) {
-                            Command newCmd = constructCommand(type, message.substring(start + 1, end));
+                                message.length() > end && (end) >= 0 &&
+                                start+1 < end) {
+                            Command newCmd = constructCommand(type, extType, message.substring(start + 1, end));
                             if (newCmd != null)
                                 commands.add(newCmd);
                         }
                         else {
-                            Command newCmd = constructCommand(type, "");
+                            Command newCmd = constructCommand(type, extType, "");
                             if (newCmd != null)
                                 commands.add(newCmd);
                         }
+                        header          = matcher.group();
+                        type            = CommandType.fromString(header);
+                        extType   = null;
+                        if (type == null)
+                            extType             = ExtensionType.fromString(header);
 
-                        type            = CommandType.fromString(matcher.group());
                         start           = matcher.end();
                     } while (matcher.find());
                 }
                 if (message.length() > start+1 && (start+1) >= 0){
-                    Command newCmd = constructCommand(type, message.substring(start + 1));
+                    Command newCmd = constructCommand(type, extType, message.substring(start + 1));
                     if (newCmd != null)
                         commands.add(newCmd);
                 }
                 //In this case only a header was sent from the user.
                 else {
-                    Command newCmd = constructCommand(type, "");
+                    Command newCmd = constructCommand(type, extType, "");
                     if (newCmd != null)
                         commands.add(newCmd);
                 }
             }
             else if (message.length() == 0) {
-                commands.add(constructCommand(CommandType.LEAVE, ""));
+                commands.add(constructCommand(CommandType.LEAVE, null, ""));
             }
             else {
                 _logger.error("Message doesn't have any valid headers for some reason: "+message);
@@ -109,12 +119,14 @@ public class MailBox extends Thread {
      * This will take in the information sent by the user and will construct a Command object that
      * will make the rest of the program easier to deal with.
      * @param type This is the first header that was given by the user.
+     * @param extType In cases when an extension is sent, the type will be null and
+     *                extType will equal the extension that was used.
      * @param body This is the body following the header (this may be an empty string.)
      * @return A Command object that was constructed or null if the user's input was invalid.
      */
-    private Command constructCommand(CommandType type, String body) {
-        Command cmd = null;
-        body        = body.trim();
+    private Command constructCommand(CommandType type, ExtensionType extType, String body) {
+        Command cmd     = null;
+        body            = body.trim();
 
         if (type == CommandType.LEAVE) {
             cmd     = new Command(type);
@@ -149,12 +161,20 @@ public class MailBox extends Thread {
                 type == CommandType.START) {
             cmd     = new Command(type);
         }
+        else if (extType == ExtensionType.PICK_UP ||
+                extType == ExtensionType.UNLOCK)
+            cmd     = new Command(extType, body);
+
 
 
         if (cmd != null)
-            _logger.info("Received Command:\n"+cmd.toString());
-        else
+            _logger.info("Received Command:\n" + cmd.toString());
+        else if (type != null)
             _logger.error("Received Command is null: Type: "+type.getCommandHeader()+" Body: "+body);
+        else if (extType != null)
+            _logger.error("Received Extension is null: Type: "+ extType.extensionHeader+" Param: "+body);
+        else
+            _logger.error("Neither a CommandType or ExtensionType was found.");
 
         return cmd;
     }

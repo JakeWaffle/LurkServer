@@ -16,7 +16,8 @@ public enum ResponseMessage {
     STATS_TOO_HIGH(ResponseHeader.REJECTED, "Stats Too High"),
     NOT_READY(ResponseHeader.REJECTED, "Not Ready"),
     NO_CONNECTION(ResponseHeader.REJECTED, "No Connection"),
-    NO_GOLD(ResponseHeader.RESULT, "Enter No Gold");
+    NO_GOLD(ResponseHeader.RESULT, "Enter No Gold"),
+    CANNOT_MESSAGE_PLAYER(ResponseHeader.REJECTED, "Cannot Message Player");
 
     private ResponseHeader _type;
     private String          _message;

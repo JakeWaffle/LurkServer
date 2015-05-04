@@ -1,5 +1,10 @@
 package com.lcsc.cs.lurkserver.game;
 
+import com.lcsc.cs.lurkserver.Protocol.Response;
+import com.lcsc.cs.lurkserver.Protocol.ResponseHeader;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -7,52 +12,99 @@ import java.util.Map;
 import java.util.Random;
 
 public class  Room {
-    private Random              _randomGenerator;
-    private String              _roomName;
-    private String              _description;
-    private String              _roomInfo;
-    private List<String>        _connections;
-    private List<Monster>       _monsters;
-    private Map<String, Player> _players;
+    private static final Logger     _logger = LoggerFactory.getLogger(Room.class);
+
+    private Random                  _randomGenerator;
+    private String                  _roomName;
+    private String                  _description;
+    private String                  _roomInfo;
+    private List<String>            _connections;
+    private List<Monster>           _monsters;
+    private int                     _gold;
+    //Maps current locked room names to the names of the key that opens them.
+    //A room is unlocked when removed from this map!
+    private Map<String, String>     _lockedRooms;
+    private List<String>            _keys;
+    private Map<String, Player>     _players;
 
     public Room(String roomName, Map<String, Object> roomData) {
-        _randomGenerator        = new Random();
-        _roomName               = roomName;
-        _description            = (String)roomData.get("description");
-        _connections            = new ArrayList<String>();
-        Object[] connections    = (Object[])roomData.get("connections");
+        if (roomData.containsKey("description") &&
+                roomData.containsKey("connections") &&
+                roomData.containsKey("monsters") &&
+                roomData.containsKey("locked_rooms") &&
+                roomData.containsKey("keys") &&
+                roomData.containsKey("gold")) {
+            _randomGenerator = new Random();
+            _roomName = roomName;
+            _description = (String) roomData.get("description");
+            _connections = new ArrayList<String>();
+            Object[] connections = (Object[]) roomData.get("connections");
 
-        for (Object connection : connections) {
-            _connections.add((String)connection);
+            for (Object connection : connections) {
+                _connections.add((String) connection);
+            }
+
+            _monsters = new ArrayList<Monster>();
+            Object[] monsters = (Object[]) roomData.get("monsters");
+
+            for (Object monsterObj : monsters) {
+                Map<String, Object> monsterData = (Map<String, Object>) monsterObj;
+                _monsters.add(new Monster(monsterData));
+            }
+
+            _lockedRooms = new HashMap<String, String>();
+            Map<String, Object> lockedRooms = (Map<String, Object>) roomData.get("locked_rooms");
+
+            for (Map.Entry<String, Object> lockedRoom : lockedRooms.entrySet()) {
+                _lockedRooms.put(lockedRoom.getKey(), (String) lockedRoom.getValue());
+            }
+
+            _gold           = ((Long)roomData.get("gold")).intValue();
+
+            _keys           = new ArrayList<String>();
+            Object[] keys   = (Object[])roomData.get("keys");
+
+            for (Object key : keys) {
+                _keys.add((String)key);
+            }
+
+            _players = new HashMap<String, Player>();
+
+            //The room info will later be used when a player enters this room and needs its information.
+            _roomInfo = String.format("Name: %s\n", _roomName) +
+                    String.format("Description: %s\n", _description);
+
+            for (int i = 0; i < _connections.size(); i++) {
+                if (i == _connections.size() - 1 && _monsters.size() == 0)
+                    _roomInfo += String.format("Connection: %s", _connections.get(_connections.size() - 1));
+                else
+                    _roomInfo += String.format("Connection: %s\n", _connections.get(i));
+            }
+
+            for (int i = 0; i < _monsters.size(); i++) {
+                if (i == _monsters.size() - 1)
+                    _roomInfo += String.format("Monster: %s", _monsters.get(i).name);
+                else
+                    _roomInfo += String.format("Monster: %s\n", _monsters.get(i).name);
+            }
         }
-
-        _monsters               = new ArrayList<Monster>();
-        Object[] monsters       = (Object[])roomData.get("monsters");
-
-        for (Object monsterObj : monsters) {
-            Map<String, Object> monsterData = (Map<String, Object>)monsterObj;
-            _monsters.add(new Monster(monsterData));
+        else {
+            _logger.error("The 'description', 'connections', 'monsters', 'locked_rooms', 'gold' or 'keys' weren't defined for the room, "+roomName);
+            System.exit(1);
         }
+    }
 
-        _players                = new HashMap<String, Player>();
 
-        //The room info will later be used when a player enters this room and needs its information.
-        _roomInfo               = String.format("Name: %s\n", _roomName)+
-                String.format("Description: %s\n", _description);
+    /**
+     * This will make sure that each player and monster is updated.
+     * @param secondsPassed This is how many seconds has passed since the last update.
+     */
+    public synchronized void update(int secondsPassed) {
+        for (Monster monster : _monsters)
+            monster.regenHealth(secondsPassed);
 
-        for (int i=0; i<_connections.size(); i++) {
-            if (i == _connections.size()-1 && _monsters.size() == 0)
-                _roomInfo += String.format("Connection: %s", _connections.get(_connections.size()-1));
-            else
-                _roomInfo += String.format("Connection: %s\n", _connections.get(i));
-        }
-
-        for (int i = 0; i < _monsters.size(); i++) {
-            if (i == _monsters.size()-1)
-                _roomInfo += String.format("Monster: %s", _monsters.get(i).name);
-            else
-                _roomInfo += String.format("Monster: %s\n", _monsters.get(i).name);
-        }
+        for (Player player : _players.values())
+            player.regenHealth(secondsPassed);
     }
 
     /**
@@ -81,7 +133,7 @@ public class  Room {
                     else
                         oneVsOne(randomMonster, player);
 
-                    player.sendRoomInfo(getRoomInfo());
+                    player.sendRoomInfo(getRoomInfo(player.name));
                 }
             }
         }
@@ -163,15 +215,69 @@ public class  Room {
     }
 
     /**
+     * This is called when a user uses the UNLCK extension to unlock something.
+     * @param player This is the player that may have the key.
+     * @param roomName This is the room that is locked.
+     * @return A response that will be sent to the user.
+     */
+    public synchronized Response unlockDoor(Player player, String roomName) {
+        Response response;
+        if (_lockedRooms.containsKey(roomName) && player.hasKey(_lockedRooms.get(roomName))) {
+            _lockedRooms.remove(roomName);
+            response = new Response(ResponseHeader.RESULT, "The door to "+roomName+" has been unlocked!");
+        }
+        else if (_lockedRooms.containsKey(roomName))
+            response = new Response(ResponseHeader.RESULT, "The "+_lockedRooms.get(roomName)+" key is needed " +
+                    "to unlocked the door to "+roomName+".");
+        else
+            response = new Response(ResponseHeader.RESULT, "The door to "+roomName+" is already unlocked!");
+
+        return response;
+    }
+
+    /**
+     * Checks to see if the door is unlocked.
+     * @param roomName THe name of the room that may be locked.
+     * @return The key that will unlock the door or null.
+     */
+    public synchronized String isDoorUnlocked(String roomName) {
+        return _lockedRooms.getOrDefault(roomName, null);
+    }
+
+    /**
+     * This will have a player pickup a key that is in the room.
+     * @param player The player picking up the key.
+     * @param keyName The name of the key (found in the description of the room.)
+     * @return A response for the user saying if it was successful.
+     */
+    public synchronized Response pickUpKey(Player player, String keyName) {
+        Response response;
+
+        if (_keys.contains(keyName)) {
+            boolean success = player.pickUpKey(keyName);
+            if (success)
+                response = new Response(ResponseHeader.RESULT, "You have picked up "+keyName+".");
+            else
+                response = new Response(ResponseHeader.RESULT, "You already have "+keyName+".");
+        }
+        else {
+            response = new Response(ResponseHeader.RESULT, _roomName+" does not have a key called "+keyName+".");
+        }
+        return response;
+    }
+
+    /**
      * This is meant to get a list of information about this room, that will be sent back to the client. In addition
      * to the room's info it will include players and monsters in the room.
+     * @param excludedPlayerName This player will be excluded from the list of players in the room.
      * @return A list of strings that are meant to be sent to the client in separate INFOM messages.
      */
-    public synchronized List<String> getRoomInfo() {
+    public synchronized List<String> getRoomInfo(String excludedPlayerName) {
         List<String> infoList = new ArrayList<String>();
 
         for (Player player : _players.values()) {
-            infoList.add(player.getInfo());
+            if (!player.name.equals(excludedPlayerName))
+                infoList.add(player.getInfo());
         }
 
         for (Monster monster : _monsters) {
@@ -190,7 +296,8 @@ public class  Room {
      * @return The amount of gold that was picked up.
      */
     public synchronized int addPlayer(Player player) {
-        int gold = 0;
+        int gold    = _gold;
+        _gold       = 0;
         _players.put(player.name, player);
         return gold;
     }

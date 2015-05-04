@@ -7,41 +7,45 @@ import org.slf4j.LoggerFactory;
  * Created by Jake on 2/26/2015.
  */
 public class Command {
-    private static final Logger _logger = LoggerFactory.getLogger(Command.class);
+    private static final Logger     _logger = LoggerFactory.getLogger(Command.class);
 
-    public  final   CommandType type;
-    public  final   ActionType  actionType;
-    public  final   String parameter;
+    public  final   CommandType     type;
+    public  final   ActionType      actionType;
+    public  final   String          parameter;
 
-    private         ExtensionType      _extension;
+    public  final   ExtensionType   extension;
 
     public Command(ExtensionType extension, String parameter) {
-        type = CommandType.EXTENSION;
-        _extension          = extension;
+        type                = CommandType.EXTENSION;
+        this.extension      = extension;
         this.parameter      = parameter;
         actionType          = null;
     }
 
     public Command(CommandType ctype, ActionType atype, String parameter) {
         type            = ctype;
+        extension       = null;
         actionType      = atype;
         this.parameter  = parameter;
     }
 
     public Command(CommandType ctype, ActionType atype) {
         type        = ctype;
+        extension       = null;
         actionType  = atype;
         parameter   = null;
     }
 
     public Command(CommandType type, String parameter) {
         this.type       = type;
+        extension       = null;
         this.parameter  = parameter;
         actionType      = null;
     }
 
     public Command(CommandType type) {
         this.type   = type;
+        extension       = null;
         parameter   = null;
         actionType  = null;
     }
@@ -50,7 +54,7 @@ public class Command {
         String message;
 
         if (type == CommandType.EXTENSION) {
-            message = _extension.getExtensionHeader();
+            message = extension.extensionHeader;
             if (parameter != null) {
                 message += " " + parameter;
             }

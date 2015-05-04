@@ -10,6 +10,7 @@ import java.util.Map;
  */
 public class Monster implements Being {
     private static final Logger _logger         = LoggerFactory.getLogger(Monster.class);
+    private final   int         MAX_HEALTH      = 100;
     public  final   String      name;
     private         String      _description;
     private         int         _gold;
@@ -31,6 +32,18 @@ public class Monster implements Being {
         _maxHealth  = ((Long)monsterData.get("max_health")).intValue();
         _health      = _maxHealth;
         _status      = BeingStatus.ALIVE;
+    }
+
+    /**
+     * This will regenerate the monster.
+     * @param secondsPassed This is how much time has passed.
+     */
+    public synchronized void regenHealth(int secondsPassed) {
+        int regeneratedHealth = ((Double)((secondsPassed/10.)*(double)_regen)).intValue();
+        if (regeneratedHealth + _health > MAX_HEALTH)
+            _health = 100;
+        else
+            _health += regeneratedHealth;
     }
 
     public synchronized boolean isDead() {

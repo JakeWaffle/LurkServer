@@ -1,4 +1,5 @@
 package com.lcsc.cs.lurkserver.game;
+import com.lcsc.cs.lurkserver.Protocol.Response;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -15,12 +16,21 @@ public class GameMap {
 
     private Map<String, Room> _rooms;
     private String            _startingRoom;
-    private ClientPool        _clients;
     
     public GameMap() {
         _rooms         = new HashMap<String, Room>();
         //This is the default room for when the map file didn't get loaded correctly.
         _startingRoom  = "Purgatory";
+    }
+
+    /**
+     * This will make sure that each room in the map is updated.
+     * @param secondsPassed This is how many seconds has passed since the last update.
+     */
+    public synchronized void update(int secondsPassed) {
+        for (Room room : _rooms.values()) {
+            room.update(secondsPassed);
+        }
     }
 
     public synchronized String getStartingRoom() {
@@ -61,10 +71,11 @@ public class GameMap {
      * This is meant to get a list of information about the room that will be sent back to the client. In addition
      * to the room's info it will include players and monsters in the room.
      * @param room This is the room that the info will be about.
+     * @param excludedPlayerName This player will be excluded from the list of players in the room.
      * @return A list of strings that are meant to be sent to the client in separate INFOM messages.
      */
-    public synchronized List<String> getRoomInfo(String room) {
-        return _rooms.get(room).getRoomInfo();
+    public synchronized List<String> getRoomInfo(String room, String excludedPlayerName) {
+        return _rooms.get(room).getRoomInfo(excludedPlayerName);
     }
 
     /**
@@ -76,39 +87,57 @@ public class GameMap {
     }
 
     /**
-     * This will load a map for the game from a json file.
-     * @param gameDir This is the directory (relative to the data
-     *                directory) that contains the game description
-     *                along with the map.
+     * This is called when a user uses the UNLCK extension to unlock something.
+     * @param player This is the player that may have the key.
+     * @param roomName This is the room that is being unlocked.
+     * @return A response for the user saying if it was successful.
      */
-    public void loadMap(String gameDir) {
-        String projRoot = new File("").getAbsolutePath();
-        FileReader reader = null;
-        
-        try {
-            File gameDataDir        = new File(projRoot, "data/"+gameDir+"/map.mdef");
-            reader                  = new FileReader(gameDataDir);
-            
-            Map<String, Object> map = (Map<String, Object>)JSON.parse(reader);
-            
-            _startingRoom           = (String)map.get("starting_room");
-            
+    public synchronized Response unlockDoor(Player player, String roomName) {
+        Room curRoom = _rooms.get(player.currentRoom());
+        return curRoom.unlockDoor(player, roomName);
+    }
+
+    /**
+     * Checks to see if a room is unlocked.
+     * @param curRoomName The room the player is in.
+     * @param otherRoomName The room the player is going to.
+     * @return The key name that will unlock the door or null.
+     */
+    public synchronized String isDoorUnlocked(String curRoomName, String otherRoomName) {
+        Room curRoom = _rooms.get(curRoomName);
+        return curRoom.isDoorUnlocked(otherRoomName);
+    }
+
+    /**
+     * This will have a player pickup a key that is in the room.
+     * @param player The player picking up the key.
+     * @param keyName The name of the key (found in the description of the room.)
+     * @return A response for the user saying if it was successful.
+     */
+    public synchronized Response pickupKey(Player player, String keyName) {
+        Room curRoom = _rooms.get(player.currentRoom());
+        return curRoom.pickUpKey(player, keyName);
+    }
+
+    /**
+     * This takes in a map that came from a json file. This map defines the game.
+     * @param gameDef This map defines the game that has been loaded.
+     */
+    public void loadMap(Map<String, Object> gameDef) {
+        if (gameDef.containsKey("starting_room") && gameDef.containsKey("rooms")) {
+            _startingRoom = (String) gameDef.get("starting_room");
+
             //Each item maps a room name to some map of room data.
-            Map<String, Object> rooms = (Map<String, Object>)map.get("rooms");
-            
+            Map<String, Object> rooms = (Map<String, Object>) gameDef.get("rooms");
+
             for (Map.Entry<String, Object> room : rooms.entrySet()) {
-                Room newRoom = new Room(room.getKey(), (Map<String, Object>)room.getValue());
+                Room newRoom = new Room(room.getKey(), (Map<String, Object>) room.getValue());
                 _rooms.put(room.getKey(), newRoom);
             }
-        } catch (FileNotFoundException e) {
-            _logger.error("Problem loading the player data file", e);
-        } catch (IOException e) {
-            _logger.error("Problem loading the player data file", e);
-        } finally {
-            try {
-                if (reader != null)
-                    reader.close();
-            } catch (IOException e) {}
+        }
+        else {
+            _logger.error("The 'starting_room' and/or the 'rooms' needs to be defined properly in the game definition file!");
+            System.exit(1);
         }
     }
 }
